@@ -67,7 +67,7 @@ kbd{font-family:var(--font-b);font-size:12px;background:var(--panel2);border:1px
 .pad .joy .knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd2b8,#ee6a40 60%,#b8462a);box-shadow:0 3px 10px rgba(0,0,0,0.45);pointer-events:none;transition:transform .06s}
 .pad .joy.on .knob{transition:none}
 .pad .joy .ja{position:absolute;color:rgba(255,255,255,0.6);font-size:15px;pointer-events:none}
-.pad .joy .up{left:50%;top:6px;transform:translateX(-50%)}.pad .joy .lf{left:8px;top:50%;transform:translateY(-50%)}.pad .joy .rt{right:8px;top:50%;transform:translateY(-50%)}
+.pad .joy .up{left:50%;top:6px;transform:translateX(-50%)}.pad .joy .dn{left:50%;bottom:6px;transform:translateX(-50%)}.pad .joy .lf{left:8px;top:50%;transform:translateY(-50%)}.pad .joy .rt{right:8px;top:50%;transform:translateY(-50%)}
 .pad .joy.jumped .up{color:#ffe08a}
 .pad .act{display:grid;grid-template-columns:repeat(2,minmax(66px,82px));grid-template-rows:58px 58px;gap:8px}
 .pad button{font:inherit;font-weight:700;font-size:17px;line-height:1.1;width:100%;height:100%;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);touch-action:none;-webkit-tap-highlight-color:transparent;cursor:pointer}
@@ -822,8 +822,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <div class="bar" style="margin-bottom:10px">
       <div class="keys">
         <span><kbd>→</kbd> 앞으로</span><span><kbd>←</kbd> 뒤로</span>
-        <span><kbd>↑</kbd>/<kbd>Space</kbd> 뛰기 (연타할수록 높이)</span>
-        <span><kbd>F</kbd> 먹물 뿜기</span><span><kbd>G</kbd> 필살기</span><span><kbd>P</kbd> 일시정지</span>
+        <span><kbd>↑</kbd>/<kbd>Space</kbd> 뛰기 (연타할수록 높이)</span><span><kbd>↓</kbd> 눕기 (누워서 먹물: 숨은 생물 잡기)</span>
+        <span><kbd>F</kbd> 먹물 뿜기 · 두 번 연속: 멀리 뿜기</span><span><kbd>G</kbd> 필살기</span><span><kbd>P</kbd> 일시정지</span>
       </div>
       <div class="tools">
         <button class="btn ghost" id="bPad" type="button">화면 버튼 보기</button>
@@ -836,11 +836,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <p id="rotateHint">휴대폰을 가로로 돌리면 게임 화면이 꽉 차게 커져요</p>
     <div class="pad" aria-label="화면 조작 버튼">
       <div class="joy" id="joy" aria-label="조이스틱: 좌우로 밀면 이동, 위로 튕기면 뛰기">
-        <span class="ja up">▲</span><span class="ja lf">◀</span><span class="ja rt">▶</span>
+        <span class="ja up">▲</span><span class="ja lf">◀</span><span class="ja rt">▶</span><span class="ja dn">▼</span>
         <div class="knob"></div>
       </div>
       <div class="act">
-        <button type="button" class="ink" data-k="ink">먹물<small>꾹 누르면 연사</small></button>
+        <button type="button" class="ink" data-k="ink">먹물<small>두 번: 멀리</small></button>
         <button type="button" class="sp" data-k="special" id="bSp">필살기<small>게이지 가득</small></button>
       </div>
     </div>
@@ -1247,7 +1247,7 @@ buildMenu();
 
 /* ---------- 입력 ---------- */
 const keys={left:0,right:0,down:0};let jumpQ=0,inkQ=0,inkHold=0,specialQ=0;
-const KMAP={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',};
+const KMAP={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowDown:'down',KeyS:'down'};
 addEventListener('keydown',e=>{
   if(!G||$('#game').hidden)return;
   const k=KMAP[e.code];
@@ -1278,11 +1278,11 @@ document.querySelector('.pad').addEventListener('touchmove',e=>e.preventDefault(
 /* 조이스틱: 좌우로 밀면 앞·뒤로 가고, 위로 튕기면 뛰어요 (다시 가운데로 돌렸다 튕기면 또 뛰어서 더 높이) */
 (()=>{const joy=$('#joy');if(!joy)return;const knob=joy.querySelector('.knob');let id=null,cx=0,cy=0,up=false;
   const move=e=>{const R=joy.clientWidth*0.36;let dx=e.clientX-cx,dy=e.clientY-cy;const d=Math.hypot(dx,dy);if(d>R){dx*=R/d;dy*=R/d;}
-    knob.style.transform=`translate(${dx}px,${dy}px)`;keys.right=dx>R*0.3?1:0;keys.left=dx<-R*0.3?1:0;
+    knob.style.transform=`translate(${dx}px,${dy}px)`;keys.right=dx>R*0.3?1:0;keys.left=dx<-R*0.3?1:0;keys.down=dy>R*0.55?1:0;
     if(dy<-R*0.55&&!up){up=true;jumpQ++;joy.classList.add('jumped');}else if(dy>-R*0.25&&up){up=false;joy.classList.remove('jumped');}};
   joy.addEventListener('pointerdown',e=>{e.preventDefault();id=e.pointerId;try{joy.setPointerCapture(id);}catch(_){}const r=joy.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;joy.classList.add('on');move(e);});
   joy.addEventListener('pointermove',e=>{if(e.pointerId===id)move(e);});
-  const end=e=>{if(e.pointerId!==id)return;id=null;up=false;keys.left=keys.right=0;knob.style.transform='';joy.classList.remove('on','jumped');};
+  const end=e=>{if(e.pointerId!==id)return;id=null;up=false;keys.left=keys.right=keys.down=0;knob.style.transform='';joy.classList.remove('on','jumped');};
   joy.addEventListener('pointerup',end);joy.addEventListener('pointercancel',end);joy.addEventListener('lostpointercapture',end);
   joy.addEventListener('contextmenu',e=>e.preventDefault());})();
 const bFull=$('#bFull'),gameEl=$('#game');
@@ -1311,7 +1311,7 @@ function togglePause(){if(!G||G.phase==='end')return;G.paused=!G.paused;$('#bPau
 function toast(text,sub,color){const ex=G.toasts.find(x=>x.text===text);if(ex){ex.t=300;return;}G.toasts.unshift({text,sub,color:color||'#e6f0f2',t:300});if(G.toasts.length>3)G.toasts.length=3;}
 function floatText(x,y,text,color){G.floats.push({x,y,text,color,t:60});}
 function over(a,b){return a.x1<b.x2&&a.x2>b.x1&&a.y1<b.y2&&a.y2>b.y1;}
-function pBox(){const p=G.p;return{x1:p.x-32,x2:p.x+32,y1:p.y-78,y2:p.y-4};}
+function pBox(){const p=G.p;return p.lie?{x1:p.x-46,x2:p.x+46,y1:p.y-38,y2:p.y-2}:{x1:p.x-32,x2:p.x+32,y1:p.y-78,y2:p.y-4};}
 function cBox(c){const w=c.bw||c.w;return{x1:c.x-w*0.42,x2:c.x+w*0.42,y1:c.y-c.h*0.42,y2:c.y+c.h*0.42};}
 function puff(x,y,n,col,sz){for(let i=0;i<n;i++)G.parts.push({x,y,vx:R(-1.2,1.2),vy:R(-1.2,0.6),r:R(sz*0.5,sz),g:R(0.15,0.4),life:R(40,70),max:70,col});}
 function bubble(x,y){G.parts.push({x,y,vx:R(-0.3,0.3),vy:R(-1.4,-0.6),r:R(1.5,3.5),g:0,life:R(50,90),max:90,col:'bub'});}
@@ -1513,9 +1513,10 @@ function spawn(){
 function updateSchools(){
   const S=G.S,p=G.p;
   for(const sc of G.schools){
-    const d=Math.hypot(sc.x-p.x,sc.y-(p.y-40)),threat=d<230;
+    const d=Math.hypot(sc.x-p.x,sc.y-(p.y-40));let threat=d<230;
+    if(sc.tired>0){sc.tired--;threat=false;}else if(threat){sc.flee=(sc.flee||0)+1;if(sc.flee>100){sc.flee=0;sc.tired=200;}}else sc.flee=Math.max(0,(sc.flee||0)-1);
     const away=sc.x>=p.x?1:-1;
-    const tvx=threat?away*sc.sp.spd*2.8:-sc.sp.spd,tvy=threat?(sc.y>=p.y-40?1.2:-1.2):Math.sin(G.t*0.02+sc.x*0.01)*0.5;
+    const tvx=threat?away*Math.min(3.0,sc.sp.spd*2.8):-sc.sp.spd*(sc.tired>0?0.5:1),tvy=threat?(sc.y>=p.y-40?1.2:-1.2):Math.sin(G.t*0.02+sc.x*0.01)*0.5;
     sc.vx+=(tvx-sc.vx)*0.08;sc.vy+=(tvy-sc.vy)*0.06;sc.x+=sc.vx;sc.y=clamp(sc.y+sc.vy,S.sf+50,gAt(sc.x)-70);
     sc.k+=((threat?0.5:1)-sc.k)*0.08;
   }
@@ -1531,13 +1532,17 @@ function onHit(c){
 function behave(c,S,p){
   const sp=c.sp,dx=c.x-p.x,dy=c.y-(p.y-40),d=Math.hypot(dx,dy),away=dx>=0?1:-1,GR=gAt(c.x),gy=GR-c.h/2;
   if(c.scare>0)c.scare--;
-  const threat=d<(sp.wary?260:150)||c.scare>0;
+  let threat=d<(sp.wary?260:150)||c.scare>0;
+  // 달아나다 지치면 한동안 느려져요 (문어가 따라잡을 수 있게)
+  if(c.tired>0){c.tired--;if(!HIDERS[c.mv])threat=false;}
+  else if(threat){c.flee=(c.flee||0)+1;if(c.flee>110){c.flee=0;c.tired=180;c.scare=0;}}else c.flee=Math.max(0,(c.flee||0)-1);
   c.danger=0;c.immune=0;
   const steer=(tvx,tvy,k)=>{c.vx+=(tvx-c.vx)*k;c.vy+=(tvy-c.vy)*k;c.x+=c.vx;c.y+=c.vy;if(Math.abs(c.vx)>0.15)c.face=c.vx<0?-1:1;};
-  const hide=(on)=>{c.pv=clamp(c.pv+(on?-0.12:0.03),0,1);};
+  if(c.flushT>0)c.flushT--;
+  const hide=(on)=>{if(c.flushT>0)on=false;c.pv=clamp(c.pv+(on?-0.12:(c.flushT>0?0.12:0.03)),0,1);};
   switch(c.mv){
     case 'swim':{let tvx=-sp.spd,tvy=Math.sin(c.t*0.025+c.ph)*0.45;
-      if(sp.shy&&threat){tvx=away*Math.max(1.5,sp.spd)*2.6;tvy=(dy>=0?1:-1)*1.1;}
+      if(sp.shy&&threat){tvx=away*Math.min(3.0,Math.max(1.5,sp.spd)*2.6);tvy=(dy>=0?1:-1)*1.1;}
       else if(sp.curious&&d<300&&d>95&&!c.scare){tvx=-away*0.7;tvy=-Math.sign(dy)*0.35;}
       steer(tvx,tvy,0.06);c.y=clamp(c.y,S.sf+30,gy-(sp.low?0:20));c.x+=curAt(c.x)*0.5;break;}
     case 'dart':{c.x-=sp.spd;if(dx>0&&dx<420)c.y+=clamp((p.y-44)-c.y,-1.3,1.3);c.y=clamp(c.y,S.sf+20,gy);c.face=-1;c.vx=-sp.spd;break;}
@@ -1568,7 +1573,7 @@ function behave(c,S,p){
       const ph=c.jp%80;if(ph<14){c.vx+=dir*0.55;c.sq=0.82;}else{c.sq=Math.min(1,(c.sq||1)+0.02);}
       c.vx*=0.955;c.x+=c.vx;c.y+=Math.sin(c.t*0.03+c.ph)*0.3;c.face=dir;c.y=clamp(c.y,S.sf+40,gy-30);break;}
     case 'cuttle':{ // 갑오징어: 지느러미로 제자리 떠 있기, 놀라면 먹물 뿜고 달아남
-      const tvx=threat?away*2.4:-0.35,tvy=threat?-0.4:Math.sin(c.t*0.02+c.ph)*0.25;steer(tvx,tvy,0.05);c.y=clamp(c.y,S.sf+40,gy-20);break;}
+      const tvx=threat?away*2.2:-0.35,tvy=threat?-0.4:Math.sin(c.t*0.02+c.ph)*0.25;steer(tvx,tvy,0.05);c.y=clamp(c.y,S.sf+40,gy-20);break;}
     case 'octowalk':{ // 주꾸미: 다리로 바닥을 기다가 놀라면 먹물 뿜고 튀어 달아남
       if(c.cool>0)c.cool--;
       if(threat&&!(c.jet>0)&&!(c.cool>0)){c.jet=40;c.cool=90;c.vx=away*4.2;c.vy=-2.2;if(!c.inked){c.inked=1;puff(c.x,c.y,8,'ink',10);}}
@@ -1665,7 +1670,8 @@ function step(){
   p.vy=Math.min(p.vy+(p.air?0.5:0.32),p.air?9:5.5);
   p.y+=p.vy;
   if(p.y-78<-300){p.y=-222;if(p.vy<0)p.vy=0;}
-  p.lie=false;
+  const wasLie=p.lie;p.lie=!!keys.down&&p.on&&!p.grabbed&&!p.sp;
+  if(p.lie&&!wasLie&&!G.lieHint){G.lieHint=1;toast('납작 엎드렸어요!','누운 채로 먹물을 쏘면 바닥을 따라 퍼져서 구멍·모래 속에 숨은 생물도 잡을 수 있어요','#cfe6ee');}
   p.x+=p.vx;
   const minX=G.camX+28,maxX=G.phase==='boss'?STAGE+W-40:STAGE+W;
   p.x=clamp(p.x,minX,maxX);
@@ -1673,13 +1679,16 @@ function step(){
   solidRocks(prevX);
   if(p.inv>0)p.inv--; if(p.cd>0)p.cd--; if(p.jt>0)p.jt--;
   p.ink=Math.min(100,p.ink+(G.phase==='boss'?0.34:0.28));
-  if((inkQ>0||inkHold)&&p.cd<=0&&p.ink>=7){inkQ=0;p.cd=11;p.ink-=7;p.spray=7;} else inkQ=0;
+  if(inkQ>0&&G.t-(p.lastTap??-99)<20&&p.ink>=16&&!p.long){inkQ=0;p.lastTap=-99;p.cd=22;p.ink-=16;p.spray=12;p.long=1;
+    if(!G.longHint){G.longHint=1;toast('먹물 멀리 뿜기!','먹물을 두 번 연속 누르면 촘촘한 먹물이 멀리까지 뻗어요','#c8b8f0');}}
+  else if((inkQ>0||inkHold)&&p.cd<=0&&p.ink>=7){if(inkQ>0)p.lastTap=G.t;inkQ=0;p.cd=11;p.ink-=7;p.spray=7;p.long=0;} else {if(inkQ>0)p.lastTap=G.t;inkQ=0;}
   if(p.spray>0){
-    p.spray--;
-    const my=p.y-38,mx=p.x+p.face*30;
+    p.spray--;if(p.spray<=0)p.long=0;
+    const my=p.lie?p.y-12:p.y-38,mx=p.x+p.face*(p.lie?52:30),low=p.lie?1:0;
     for(let i=0;i<6;i++){
-      const a=R(-0.2,0.2)*(Math.random()<0.4?0.35:1),v=R(7,13);
-      G.inks.push({x:mx,y:my,vx:p.face*Math.cos(a)*v+p.vx*0.5,vy:Math.sin(a)*v,r:R(2,4),gr:R(0.2,0.45),life:R(34,52),max:52,spent:0});
+      if(p.long){if(i>=9)break;const a=low?R(0.0,0.04):R(-0.05,0.05),v=R(13,18);G.inks.push({low,x:mx,y:my,vx:p.face*Math.cos(a)*v+p.vx*0.5,vy:Math.sin(a)*v,r:R(1.6,3),gr:R(0.12,0.28),life:R(60,80),max:80,spent:0,drag:0.955,lng:1});continue;}
+      const a=low?R(-0.02,0.1):R(-0.2,0.2)*(Math.random()<0.4?0.35:1),v=R(7,13);
+      G.inks.push({low,x:mx,y:my,vx:p.face*Math.cos(a)*v+p.vx*0.5,vy:Math.sin(a)*v,r:R(2,4),gr:R(0.2,0.45),life:R(34,52),max:52,spent:0});
     }
   }
   if(Math.abs(p.vx)>1&&G.t%9===0)bubble(p.x-p.face*18,p.y-30);
@@ -1709,6 +1718,7 @@ function step(){
     if(c.state==='eaten'){c.et++;const tx=p.x+p.face*20,ty=p.y-42;c.x+=(tx-c.x)*0.14;c.y+=(ty-c.y)*0.14;if(c.et>=36){c.dead=1;eat(c);}continue;}
     if(!c.seenM&&c.x-G.camX<W+10){c.seenM=1;G.dex[sp.n].seen=1;}
     behave(c,S,p);
+    if(c.flushT>0&&HIDERS[c.mv])c.pv=Math.min(1,c.pv+0.12);
     if(c.x<G.camX-260)c.dead=1;
     if((sp.aggr||c.danger)&&c.pv>0.4&&(c.mv!=='ambush'||c.e>0.6)&&(c.mv!=='puffer'||c.danger)&&over(pBox(),cBox(c)))
       hurt(sp.atk||6,c.x,c.mv==='puffer'||c.mv==='slow'?`${sp.n} 가시에 찔렸어요!`:`${sp.n}에게 공격당했어요!`);
@@ -1728,18 +1738,18 @@ function step(){
 
   // --- 먹물 (스프레이)
   for(const k of G.inks){
-    k.x+=k.vx;k.y+=k.vy;k.vx*=0.9;k.vy=k.vy*0.9-0.012;k.r+=k.gr;k.life--;
+    k.x+=k.vx;k.y+=k.vy;k.vx*=(k.drag||0.9);k.vy=k.vy*(k.drag||0.9)-0.012;if(k.low){const gk=gAt(k.x)-6;if(k.y>gk){k.y=gk;k.vy=-Math.abs(k.vy)*0.3;}}k.r+=k.gr;k.life--;
     const jet=!k.spent&&Math.abs(k.vx)>1.6;
     for(const c of G.cr){
       if(c.state!=='alive'||c.held)continue;
-      if(c.pv<0.35)continue;
+      const hid=c.pv<0.35;if(hid&&!(k.low&&HIDERS[c.mv]))continue;
       if(c.immune){if(!G.notePuff){G.notePuff=1;toast('복어가 몸을 부풀려서 먹물이 통하지 않아요!',null,'#cfe6ee');}continue;}
       const b=cBox(c);
       if(k.x>b.x1-k.r&&k.x<b.x2+k.r&&k.y>b.y1-k.r&&k.y<b.y2+k.r){
         if(c.sp.protect){if(!G.noteProt){G.noteProt=true;toast(`${c.sp.n}은(는) 보호종이라 먹물이 통하지 않아요`,null,'#a8e6bd');}continue;}
         // 뿜어 나가는 먹물 줄기는 크게, 퍼진 먹물 구름은 닿아 있는 동안 조금씩 깎아요
         if(jet&&!k.spent){k.spent=1;k.vx*=0.25;k.vy*=0.25;c.hp-=0.22;}else c.hp-=0.012;
-        c.hitT=12;onHit(c);
+        c.hitT=12;onHit(c);if(k.low&&HIDERS[c.mv]){if(hid&&!c.flushT)floatText(c.x,c.y-30,`${c.sp.n} 발견!`,'#ffe08a');c.flushT=110;}
         if(c.hp<=0){c.hp=0;c.state='eaten';floatText(c.x,c.y-20,c.sp.n,'#fff3c4');}
       }
     }
