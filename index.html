@@ -134,7 +134,8 @@ body.touch.playing .pad .act{grid-template-columns:repeat(2,minmax(84px,108px));
 .mapwrap{display:grid;grid-template-columns:minmax(240px,400px) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:760px){.mapwrap{grid-template-columns:1fr}}
 .mapsvg{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.mapsvg svg{display:block;width:100%;height:min(62vh,560px);touch-action:none;cursor:grab}
+#msvg{display:block;width:100%;height:min(62vh,560px);touch-action:none;cursor:grab}
+#gmap{display:block;width:100%;height:min(62vh,560px);border:0}
 #lmap{width:100%;height:min(62vh,560px);background:#16557e}
 .maptools{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .msearch{position:relative;flex:1 1 260px;min-width:0}
@@ -147,7 +148,7 @@ body.touch.playing .pad .act{grid-template-columns:repeat(2,minmax(84px,108px));
 .mresults .nohit{margin:6px 8px;font-size:13px;color:var(--mute)}
 .mapcol{display:flex;flex-direction:column;gap:8px;min-width:0}
 .mapbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.layersw,.zoomb{display:flex;gap:4px}
+.layersw,.zoomb{display:flex;gap:4px;flex-wrap:wrap}
 .layersw button,.zoomb button{font:inherit;font-weight:700;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--mute);cursor:pointer}
 .layersw button[aria-pressed="true"]{background:var(--fg);color:#05131b}
 .zoomb button{font-size:18px;padding:2px 14px;color:var(--fg)}
@@ -806,10 +807,11 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <div class="mapcol">
         <div class="mapsvg" id="mapSvg"></div>
         <div class="mapbar">
-          <div id="layerSwitch" class="layersw" hidden><button type="button" data-layer="osm" aria-pressed="true">일반 지도</button><button type="button" data-layer="ocean" aria-pressed="false">바다 지형</button></div>
+          <div id="layerSwitch" class="layersw" hidden><button type="button" data-layer="osm" aria-pressed="true">지도</button><button type="button" data-layer="ocean" aria-pressed="false">바다 지형</button><button type="button" data-layer="gmap" aria-pressed="false">구글 지도</button><button type="button" data-layer="gsat" aria-pressed="false">구글 위성</button></div>
           <div class="zoomb" id="zoomB"><button type="button" id="zIn" aria-label="확대">＋</button><button type="button" id="zOut" aria-label="축소">－</button></div>
         </div>
         <p id="mapNote" class="mapnote" hidden>이 화면에서는 실제 지도를 불러올 수 없어서 간단한 지도로 보여 드려요. GitHub Pages 주소로 열면 실제 지도(OpenStreetMap)와 바다 지형 지도가 나와요.</p>
+        <p id="gnote" class="mapnote" hidden>구글 지도는 고른 장소 한 곳을 보여 줘요. 다른 장소는 아래 목록의 [지도에서 보기]를 누르세요.</p>
         <p class="mapnote">두 손가락으로 벌리거나 오므려 확대·축소하고, 끌어서 지도를 움직여요.</p>
       </div>
       <div class="loclist" id="locList"></div>
@@ -1086,10 +1088,13 @@ const COAST=[[126.55,37.78],[126.6,37.55],[126.62,37.42],[126.75,37.3],[126.65,3
 const ISLES=[[126.55,33.37,0.35,0.17],[126.15,34.99,0.06,0.05],[126.02,34.86,0.07,0.04],[126.22,34.76,0.05,0.04],[125.95,35.08,0.05,0.03],[126.12,36.63,0.03,0.02],[128.33,34.68,0.06,0.04],[128.25,34.62,0.05,0.03],[128.47,34.72,0.04,0.03],[127.95,34.78,0.09,0.07],[130.87,37.5,0.05,0.04]];
 const MPX=(lon,lat)=>[(lon-125.6)*100,(38.7-lat)*124];
 const MAPVIEW={east:[230,20,230,430],west:[0,110,190,420],south:[70,400,330,170]};
+let gLayer=null;
+function setGoogle(){const L=LOCS[mapSel]||LOCS[SEAS[mapSea].locs[0]],f=$('#gmap');if(!f)return;
+  const src=`https://maps.google.com/maps?q=${L.lat},${L.lon}&z=13&t=${gLayer==='gsat'?'k':'m'}&hl=ko&output=embed`;if(f.getAttribute('src')!==src)f.setAttribute('src',src);}
 let mapSea='east',mapSel=null,LMAP=null,LMK={},mapMode=null,tileOK=false,svgVB=null;
 function openMap(k){mapSea=k;mapSel=SEAS[k].locs[0];show('map');renderMap(true);}
 function locText(L){return [L.name,L.place,L.desc,SEAS[L.sea].name,...L.terrain.map(z=>[z[2].label||'',z[2].name||'',z[0]==='wreck'?(z[2].kind==='sinan'?'침몰선 난파선 신안선 유물':'침몰선 난파선 고려 침몰선 유물 청자'):'',z[0]==='island'?'섬':'',z[0]==='tetra'?'방파제 테트라포드':'',z[0]==='harbor'||z[0]==='quay'?'항구':'',z[0]==='mudflat'?'갯벌':''].join(' ')),...L.list.map(s=>s.n)].join(' ');}
-function selectLoc(id,fly){const L=LOCS[id];if(L.sea!==mapSea){mapSea=L.sea;}mapSel=id;renderList();renderMarkers();
+function selectLoc(id,fly){const L=LOCS[id];if(L.sea!==mapSea){mapSea=L.sea;}mapSel=id;renderList();renderMarkers();if(gLayer)setGoogle();
   if(fly&&mapMode==='real'&&LMAP)LMAP.flyTo([L.lat,L.lon],11,{duration:0.8});
   if(fly&&mapMode==='svg'){const [x,y]=MPX(L.lon,L.lat);svgVB=[x-60,y-50,120,100];applyVB();}
   const c=$('#loc-'+id);if(c)c.scrollIntoView({block:'nearest',behavior:'smooth'});}
@@ -1104,15 +1109,18 @@ function renderMap(fit){
 function fitSea(){const pts=SEAS[mapSea].locs.map(id=>[LOCS[id].lat,LOCS[id].lon]);const b=window.L.latLngBounds(pts).pad(pts.length>1?0.9:0.5);LMAP.fitBounds(b,{maxZoom:9});}
 function initReal(){
   try{
-    const box=$('#mapSvg');box.innerHTML='<div id="lmap"></div>';
+    const box=$('#mapSvg');box.innerHTML='<div id="lmap"></div><iframe id="gmap" hidden title="구글 지도" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>';
     LMAP=window.L.map('lmap',{zoomControl:true,attributionControl:true,minZoom:5,maxZoom:15,worldCopyJump:false}).setView([36,127.8],7);
     const osm=window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap 기여자'});
     const ocean=window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:13,attribution:'바다 지형: Esri, GEBCO, NOAA'});
+    LMAP.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     osm.addTo(LMAP);mapMode='real';$('#zoomB').hidden=true;let loaded=0,errs=0;
     const onload=()=>{loaded++;tileOK=true;};const onerr=()=>{errs++;if(!tileOK&&errs>=3&&mapMode==='real')fallbackSvg();};
     osm.on('tileload',onload).on('tileerror',onerr);ocean.on('tileload',onload).on('tileerror',onerr);
     const sw=$('#layerSwitch');sw.hidden=false;sw.querySelectorAll('button').forEach(b=>b.onclick=()=>{const want=b.dataset.layer;
       sw.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      if(want==='gmap'||want==='gsat'){gLayer=want;$('#lmap').hidden=true;$('#gmap').hidden=false;setGoogle();$('#gnote').hidden=false;return;}
+      gLayer=null;$('#gmap').hidden=true;$('#lmap').hidden=false;$('#gnote').hidden=true;LMAP.invalidateSize();
       if(want==='ocean'){LMAP.removeLayer(osm);ocean.addTo(LMAP);}else{LMAP.removeLayer(ocean);osm.addTo(LMAP);}});
     setTimeout(()=>{if(!tileOK&&errs>0)fallbackSvg();},3500);
   }catch(e){fallbackSvg();}
@@ -1287,7 +1295,7 @@ $('#bQuit').onclick=()=>{if(G)saveRecord(G,false);G=null;openMap(lastSea);};
 $('#bAgain').onclick=()=>start(lastLoc);
 $('#bMenu').onclick=()=>openMap(lastSea);
 $('#bMapBack').onclick=()=>show('menu');
-document.querySelectorAll('.seatab').forEach(b=>b.onclick=()=>{mapSea=b.dataset.sea;mapSel=SEAS[mapSea].locs[0];renderMap(true);});
+document.querySelectorAll('.seatab').forEach(b=>b.onclick=()=>{mapSea=b.dataset.sea;mapSel=SEAS[mapSea].locs[0];renderMap(true);if(gLayer)setGoogle();});
 $('#mapQ').addEventListener('input',runSearch);
 $('#mapQ').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runSearch();const f=$('#mapResults .hit');if(f)f.click();}if(e.key==='Escape'){$('#mapResults').hidden=true;}});
 $('#zIn').onclick=()=>mapZoom(0.75);$('#zOut').onclick=()=>mapZoom(1.33);
@@ -1638,9 +1646,11 @@ function step(){
   const S=G.S,p=G.p;G.t++;
   if(G.phase==='end'){G.endT++;updateParts();if(G.endT===80)showEnd();return;}
   // --- 플레이어
+  if(p.grabbed){const n=jumpQ+inkQ+specialQ;jumpQ=inkQ=specialQ=0;if(G.boss&&n){G.boss.grip-=n;bubble(p.x+R(-20,20),p.y-50);}}
   while(specialQ>0){specialQ--;trySpecial();}
   p.spg=Math.min(100,p.spg+0.02);
   if(p.sp)updateSpecial();
+  else if(p.grabbed){}
   else{
   const acc=p.lie?0.22:0.5,maxv=p.lie?1.8:4.2;
   if(keys.right&&!keys.left){p.vx+=acc;p.face=1;}
@@ -1791,7 +1801,7 @@ function startBoss(){
   G.cr=G.cr.filter(c=>c.x>STAGE+40&&c.x<STAGE+W);
   const hp=G.p.max*4;
   G.boss={x:STAGE+W+140,y:G.S.ground,vx:0,vy:0,hp,max:hp,t:0,state:'enter',pat:'idle',pt:0,hitT:0,home:STAGE+W-230,face:-1,on:true};
-  toast(`보스 · ${G.S.boss.name} 등장!`,`더 크고, 더 많고 진한 먹물을 뿜어요. 에너지 ${hp} (내 에너지의 4배)`,'#ffb0a3');
+  toast(`보스 · ${G.S.boss.name} 등장!`,`먹물 · 다리 휩쓸기 · 내려찍기 · 붙잡기 · 몸통 공격을 해요. 에너지 ${hp}`,'#ffb0a3');
 }
 function bossShoot(x,y,vx,vy,r){G.binks.push({x,y,vx,vy,r,life:220,w:R(0,6)});}
 function updateBoss(){
@@ -1809,7 +1819,9 @@ function updateBoss(){
     B.pt--;
     if(B.pat==='idle'){
       if(B.on)B.x+=Math.sign(p.x-B.x)*(rage?2.2:1.5); // 쫓아와요
-      if(B.pt<=0){const pats=rage?['fan','lunge','low','rain','fan','lunge','combo']:['fan','low','lunge','fan','rain','lunge'];B.pat=pats[Math.floor(Math.random()*pats.length)];B.pt=rage?110:130;B.k=0;}
+      if(B.pt<=0){const pats=rage?['fan','sweep','slam','grab','bodyslam','charge','rain','combo','sweep','slam']:['fan','sweep','slam','grab','low','bodyslam','charge','sweep'];
+        let pk=pats[Math.floor(Math.random()*pats.length)];if(pk===B.lastPat)pk=pats[Math.floor(Math.random()*pats.length)];B.pat=pk;B.lastPat=pk;
+        B.pt={sweep:95,slam:85,grab:180,bodyslam:130,charge:90}[pk]||(rage?110:130);B.k=0;B.arm=null;B.slammed=0;}
     } else {
       const k=B.k++;
       if((B.pat==='fan'||B.pat==='combo')&&k%(rage?12:16)===0&&k<80){
@@ -1821,11 +1833,13 @@ function updateBoss(){
       if(B.pat==='high'&&k%(rage?20:26)===0&&k<90){bossShoot(mx,S.ground-44,B.face*5,0,14);puff(mx,S.ground-44,5,'bink',12);}
       if(B.pat==='lunge'&&(k===8||k===55)&&B.on){B.vy=-11;B.vx=Math.sign(p.x-B.x)*7.5;}
       if((B.pat==='rain'||B.pat==='combo')&&k%(rage?6:8)===0&&k<80){bossShoot(R(Math.max(STAGE+40,p.x-220),Math.min(STAGE+W-60,p.x+220)),S.top-10,R(-0.4,0.4),R(2.2,3.2),R(13,19));}
-      if(B.pt<=0){B.pat='idle';B.pt=rage?20:40;}
+      bossMelee(B,k,rage,p,S);
+      if(B.pt<=0){B.pat='idle';B.pt=rage?22:40;B.arm=null;B.sqx=B.sqy=1;if(p.grabbed)releaseGrab(B,p);}
     }
-    if(over(pBox(),{x1:B.x-85,x2:B.x+85,y1:B.y-162,y2:B.y}))hurt(18,B.x,'거대 참문어에게 붙잡혔어요!');
+    if(!p.grabbed&&over(pBox(),{x1:B.x-85,x2:B.x+85,y1:B.y-162,y2:B.y}))hurt(18,B.x,B.pat==='charge'?`${S.boss.name}의 몸통 박치기!`:`${S.boss.name}의 몸에 부딪혔어요!`);
   }
   else if(B.state==='down'){
+    if(p.grabbed)releaseGrab(B,p);B.arm=null;
     B.t++;const tx=p.x+p.face*20,ty=p.y;B.x+=(tx-B.x)*0.05;B.y+=(ty-B.y)*0.05;
     if(B.t>80){G.score+=3000;G.eaten++;p.en=Math.min(p.max,p.en+40);floatText(p.x,p.y-70,'+40 에너지','#9ff0c0');G.boss=null;G.binks=[];endGame(true);return;}
   }
@@ -1837,6 +1851,79 @@ function updateBoss(){
     if(k.x>b.x1-k.r*0.7&&k.x<b.x2+k.r*0.7&&k.y>b.y1-k.r*0.7&&k.y<b.y2+k.r*0.7&&G.p.inv<=0){k.life=0;G.blind=110;hurt(12,k.x,'진한 먹물을 뒤집어썼어요! 앞이 안 보여요');}
   }
   G.binks=G.binks.filter(k=>k.life>0&&k.x>STAGE-40&&k.x<STAGE+W+40);
+  // 충격파
+  for(const w of (G.waves||[])){w.x+=w.dir*7;w.life--;const pb=pBox();if(!p.grabbed&&pb.y2>S.ground-34&&Math.abs(p.x-w.x)<30)hurt(12,w.x,'충격파에 휩쓸렸어요! 뛰어서 피하세요');}
+  G.waves=(G.waves||[]).filter(w=>w.life>0);
+}
+/* ---------- 보스 다리·몸통 공격 ---------- */
+function armHit(B,x0,y0,cx,cy,x1,y1,r){const pb=pBox();for(let i=0;i<=12;i++){const u=i/12,x=(1-u)*(1-u)*x0+2*(1-u)*u*cx+u*u*x1,y=(1-u)*(1-u)*y0+2*(1-u)*u*cy+u*u*y1;
+  if(x>pb.x1-r&&x<pb.x2+r&&y>pb.y1-r&&y<pb.y2+r)return true;}return false;}
+function releaseGrab(B,p){p.grabbed=0;p.vx=-B.face*7;p.vy=-6;p.on=false;p.inv=70;B.arm=null;}
+function bossMelee(B,k,rage,p,S){
+  const bx=B.x+B.face*40,by=B.y-30,g=S.ground,sp=rage?1.25:1;
+  B.sqx=B.sqy=1;
+  if(B.pat==='sweep'){ // 다리 휩쓸기: 바닥을 따라 다리를 휘둘러요 → 뛰어서 피하기
+    if(k===0){B.sdir=Math.sign(p.x-B.x)||-1;floatText(B.x,B.y-190,'!','#ff5040');}
+    if(k<32){B.arm={x0:bx,y0:by,cx:bx+B.sdir*30,cy:by-140,x1:bx+B.sdir*70,y1:by-170,warn:1};}
+    else if(k<72){const u=(k-32)/40*sp,tip=B.x+B.sdir*(80+Math.min(1,u)*760);B.arm={x0:bx,y0:by,cx:(bx+tip)/2,cy:g-70,x1:tip,y1:g-20};
+      if(!p.grabbed&&armHit(B,bx,by,(bx+tip)/2,g-70,tip,g-20,18))hurt(14,B.x,'다리 휩쓸기에 맞았어요! 뛰어서 피하세요');
+      if(k%4===0)puff(tip,g-4,2,'#c9b98a',6);}
+    else B.arm=null;
+  }
+  if(B.pat==='slam'){ // 다리 내려찍기: 문어 위로 다리를 들었다가 내려찍어요 → 옆으로 피하기
+    if(k===0){B.tx=p.x;floatText(p.x,g-210,'!','#ff5040');}
+    const tx=B.tx,hi=Math.max(S.sf+20,g-300);
+    if(k<40){B.tx+=clamp(p.x-B.tx,-2,2);B.arm={x0:bx,y0:by,cx:(bx+tx)/2,cy:hi-60,x1:tx,y1:hi,warn:1,shadow:tx};}
+    else if(k<50){const u=(k-40)/10,y=hi+(g-24-hi)*u;B.arm={x0:bx,y0:by,cx:(bx+tx)/2,cy:hi-40,x1:tx,y1:y};
+      if(k===49){G.shake=16;puff(tx,g-4,12,'#c9b98a',10);}
+      if(!p.grabbed&&Math.abs(p.x-tx)<52&&p.y>y-10)hurt(18,tx,'다리 내려찍기에 맞았어요! 그림자를 보고 옆으로 피하세요');}
+    else if(k<66)B.arm={x0:bx,y0:by,cx:(bx+tx)/2,cy:g-90,x1:tx,y1:g-24};
+    else B.arm=null;
+  }
+  if(B.pat==='grab'){ // 다리로 붙잡아 조이기 → 뛰기·먹물을 연타해 빠져나오기
+    if(p.grabbed){B.gt++;const hx=B.x+B.face*95,hy=B.y-70;p.x+=(hx-p.x)*0.2;p.y+=(hy-p.y)*0.2;p.vx=p.vy=0;
+      p.en=Math.max(0,p.en-0.2);if(G.t%20===0)floatText(p.x,p.y-90,'꽉!','#ff8b7d');
+      B.arm={x0:bx,y0:by,cx:bx+B.face*40,cy:by-80,x1:p.x,y1:p.y-36,squeeze:1};B.pt=Math.max(B.pt,5);
+      if(p.en<=0){p.en=0;endGame(false);}
+      if(B.grip<=0||B.gt>170){releaseGrab(B,p);floatText(p.x,p.y-90,'빠져나왔다!','#9ff0c0');B.pt=Math.min(B.pt,10);}
+      return;}
+    if(k===0){B.gx=bx;B.gy=by-60;floatText(B.x,B.y-190,'!','#ff5040');}
+    if(k<60){const tx=p.x,ty=p.y-36;B.gx+=clamp(tx-B.gx,-7*sp,7*sp);B.gy+=clamp(ty-B.gy,-5,5);
+      B.arm={x0:bx,y0:by,cx:(bx+B.gx)/2,cy:Math.min(by,B.gy)-80,x1:B.gx,y1:B.gy};
+      if(k>12&&p.inv<=0&&Math.hypot(p.x-B.gx,(p.y-36)-B.gy)<44){p.grabbed=1;B.grip=7;B.gt=0;G.shake=10;
+        toast(`${S.boss.name}에게 붙잡혔어요!`,'뛰기나 먹물을 빠르게 연타해서 빠져나오세요','#ff9a8c');}}
+    else B.arm=null;
+  }
+  if(B.pat==='bodyslam'){ // 몸통 내려찍기: 높이 뛰어 문어 쪽으로 떨어지며 충격파 → 충격파를 뛰어넘기
+    if(k===0){B.sqy=0.8;B.sqx=1.15;}
+    if(k===14&&B.on){B.vy=-14;B.vx=(p.x-B.x)/80;floatText(B.x,B.y-190,'!','#ff5040');}
+    if(k>20&&B.on&&!B.slammed){B.slammed=1;G.shake=22;puff(B.x,g-4,18,'#c9b98a',14);
+      G.waves=(G.waves||[]).concat([{x:B.x-60,dir:-1,life:70},{x:B.x+60,dir:1,life:70}]);}
+    if(k<14){B.sqy=0.8;B.sqx=1.15;}
+  }
+  if(B.pat==='charge'){ // 몸통 박치기: 웅크렸다가 빠르게 돌진 → 높이 뛰어넘기
+    if(k===0){B.cdir=Math.sign(p.x-B.x)||-1;floatText(B.x,B.y-190,'!','#ff5040');}
+    if(k<28){B.sqx=1.18;B.sqy=0.82;B.x-=B.cdir*0.6;}
+    else if(k<70){B.x+=B.cdir*10*sp;B.face=B.cdir;if(k%3===0)puff(B.x-B.cdir*60,g-6,2,'#c9b98a',8);
+      if(B.x<=STAGE+140||B.x>=STAGE+W-90){G.shake=12;B.pt=Math.min(B.pt,6);}}
+  }
+}
+function drawTentacle(x0,y0,cx,cy,x1,y1,c1,c2,th){
+  ctx.lineCap='round';const N=18;let px=x0,py=y0;
+  for(const pass of [0,1])for(let i=1;i<=N;i++){const u=i/N,x=(1-u)*(1-u)*x0+2*(1-u)*u*cx+u*u*x1,y=(1-u)*(1-u)*y0+2*(1-u)*u*cy+u*u*y1;
+    if(i===1){px=x0;py=y0;}ctx.strokeStyle=pass?c1:c2;ctx.lineWidth=(th*(1-u*0.7))*(pass?0.78:1);ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(x,y);ctx.stroke();
+    if(pass&&i%2===0){ctx.fillStyle='rgba(255,228,210,0.95)';ctx.beginPath();ctx.arc(x,y+th*0.28*(1-u*0.7),Math.max(1.6,th*0.16*(1-u*0.7)),0,7);ctx.fill();}px=x;py=y;}
+}
+function drawBossAttacks(B){
+  const cx=G.camX,bb=G.S.boss,g=G.S.ground;
+  if(B&&B.arm){const a=B.arm;
+    if(a.shadow!=null){const pu=0.5+0.5*Math.sin(G.t*0.4);ctx.fillStyle=`rgba(255,40,30,${0.25+0.25*pu})`;ctx.beginPath();ctx.ellipse(a.shadow-cx,g-2,56,10,0,0,7);ctx.fill();}
+    if(a.warn){ctx.save();ctx.shadowColor='#ff3020';ctx.shadowBlur=16+8*Math.sin(G.t*0.5);}
+    drawTentacle(a.x0-cx,a.y0,a.cx-cx,a.cy,a.x1-cx,a.y1,bb.c1,bb.c2,30);
+    if(a.warn)ctx.restore();
+    if(a.squeeze){ctx.strokeStyle=bb.c1;ctx.lineWidth=12;ctx.beginPath();ctx.ellipse(a.x1-cx,a.y1,34,22,G.t*0.1,0,Math.PI*1.6);ctx.stroke();}}
+  for(const w of (G.waves||[])){const x=w.x-cx,a=w.life/70;ctx.strokeStyle=`rgba(255,250,230,${0.8*a})`;ctx.lineWidth=4;
+    ctx.beginPath();ctx.ellipse(x,g-14,18,26,0,Math.PI*0.6,Math.PI*1.4);ctx.stroke();ctx.fillStyle=`rgba(200,180,130,${0.6*a})`;ctx.beginPath();ctx.ellipse(x,g-6,24,8,0,0,7);ctx.fill();}
 }
 
 function endGame(win){
@@ -2589,9 +2676,11 @@ function render(){
   if(B){
     ctx.save();ctx.translate(B.x-G.camX,B.y);
     const sc=B.state==='down'?Math.max(0.1,BS*(1-B.t/80)):BS;
-    ctx.scale(sc*B.face,sc);if(B.hitT>0&&(B.hitT>>1)%2)ctx.globalAlpha=0.6;
+    ctx.scale(sc*B.face*(B.sqx||1),sc*(B.sqy||1));if(B.hitT>0&&(B.hitT>>1)%2)ctx.globalAlpha=0.6;
+    if(B.arm&&B.arm.squeeze===undefined&&0){}
     {const bb=G.S.boss;drawOcto(bb.c1,bb.c2,G.t,false,{angry:1,spd:0.8,suck:1,arm:bb.arm,thin:bb.thin,ring:bb.ring});}
     ctx.restore();
+    drawBossAttacks(B);
   }
   // 플레이어 (필살기 다리 먼저)
   if(p.sp&&(p.sp.ph==='reach'||p.sp.ph==='pull'))drawGrabArms(p);
@@ -2677,7 +2766,7 @@ const INK_BURST_BOSS=21;                 // 먹물 한 번(스프레이 42방울
 const SPECIAL_BOSS_DMG=INK_BURST_BOSS*2; // 필살기는 먹물 공격의 두 배
 function spTargetPos(T){if(T.boss)return[T.boss.x,T.boss.y-26*BS];return[T.c.x,T.c.y];}
 function trySpecial(){
-  const p=G.p;if(p.sp||G.phase==='end')return;
+  const p=G.p;if(p.sp||p.grabbed||G.phase==='end')return;
   if(p.spg<100){toast('필살기 게이지가 아직 덜 찼어요','생물을 잡아먹으면 게이지가 차요','#f0c870');return;}
   let tgt=null;const B=G.boss;
   if(B&&B.state==='fight')tgt={boss:B};
