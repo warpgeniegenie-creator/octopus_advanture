@@ -134,7 +134,607 @@ body.touch.playing .pad .act{grid-template-columns:repeat(2,minmax(84px,108px));
 .mapwrap{display:grid;grid-template-columns:minmax(240px,400px) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:760px){.mapwrap{grid-template-columns:1fr}}
 .mapsvg{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.mapsvg svg{display:block;width:100%;height:auto;max-height:70vh}
+.mapsvg svg{display:block;width:100%;height:min(62vh,560px);touch-action:none;cursor:grab}
+#lmap{width:100%;height:min(62vh,560px);background:#16557e}
+.maptools{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.msearch{position:relative;flex:1 1 260px;min-width:0}
+.msearch input{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg)}
+.msearch input:focus-visible{outline:3px solid var(--coral);outline-offset:1px}
+.mresults{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1200;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);padding:6px;display:flex;flex-direction:column;gap:4px;max-height:50vh;overflow:auto}
+.mresults .hit{font:inherit;text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:8px;border:0;background:transparent;color:var(--fg);cursor:pointer}
+.mresults .hit:hover,.mresults .hit:focus-visible{background:var(--panel2);outline:none}
+.mresults .hit span{font-size:12.5px;color:var(--mute)}
+.mresults .nohit{margin:6px 8px;font-size:13px;color:var(--mute)}
+.mapcol{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mapbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.layersw,.zoomb{display:flex;gap:4px}
+.layersw button,.zoomb button{font:inherit;font-weight:700;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--mute);cursor:pointer}
+.layersw button[aria-pressed="true"]{background:var(--fg);color:#05131b}
+.zoomb button{font-size:18px;padding:2px 14px;color:var(--fg)}
+.mapnote{margin:0;font-size:12.5px;color:var(--mute)}
+.lpinwrap{background:none;border:0}
+.lpin{position:relative;width:18px;height:18px}
+.lpin .dot{position:absolute;inset:0;border-radius:50%;background:var(--c);border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;line-height:1}
+.lpin.sel .dot{transform:scale(1.35);border-color:#ffe08a}
+.lpin.other{opacity:.6}
+.lpin .nm{position:absolute;left:22px;top:-2px;white-space:nowrap;font:700 12.5px var(--font-b);color:#fff;background:rgba(6,20,30,.78);padding:2px 7px;border-radius:6px}
+.leaflet-container{font-family:var(--font-b)}
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+.leaflet-tile::selection {
+	background: transparent;
+}
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+.leaflet-container img.leaflet-tile {
+	mix-blend-mode: plus-lighter;
+}
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+.leaflet-pane         { z-index: 400; }
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	display: inline-block;
+	position: absolute;
+	}
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; 
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; 
+	pointer-events: auto;
+	}
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+.leaflet-default-icon-path { 
+	}
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+	margin: -10px auto 0;
+	pointer-events: auto;
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+@media print {
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
 .mapsvg .land{fill:#d9c99a;stroke:#8a7a52;stroke-width:0.8}
 .mapsvg .seaname{fill:rgba(255,255,255,0.35);font-family:var(--font-d);font-size:22px}
 .mapsvg .pin{cursor:pointer}.mapsvg .pin.dim{cursor:default;opacity:.5}
@@ -191,7 +791,29 @@ body.touch.playing .pad .act{grid-template-columns:repeat(2,minmax(84px,108px));
       <h2 id="mapTitle">지도</h2>
       <button class="btn ghost" id="bRec3" type="button">기록 · 도감</button>
     </div>
-    <div class="mapwrap"><div class="mapsvg" id="mapSvg"></div><div class="loclist" id="locList"></div></div>
+    <div class="maptools">
+      <div class="tabs" role="tablist" aria-label="바다">
+        <button class="tab seatab" role="tab" type="button" data-sea="east">동해</button>
+        <button class="tab seatab" role="tab" type="button" data-sea="west">서해</button>
+        <button class="tab seatab" role="tab" type="button" data-sea="south">남해</button>
+      </div>
+      <div class="msearch">
+        <input id="mapQ" type="search" autocomplete="off" placeholder="동해·서해·남해 전체에서 찾기 (예: 낙지, 침몰선, 통영)" aria-label="장소·지형·생물 검색">
+        <div id="mapResults" class="mresults" hidden></div>
+      </div>
+    </div>
+    <div class="mapwrap">
+      <div class="mapcol">
+        <div class="mapsvg" id="mapSvg"></div>
+        <div class="mapbar">
+          <div id="layerSwitch" class="layersw" hidden><button type="button" data-layer="osm" aria-pressed="true">일반 지도</button><button type="button" data-layer="ocean" aria-pressed="false">바다 지형</button></div>
+          <div class="zoomb" id="zoomB"><button type="button" id="zIn" aria-label="확대">＋</button><button type="button" id="zOut" aria-label="축소">－</button></div>
+        </div>
+        <p id="mapNote" class="mapnote" hidden>이 화면에서는 실제 지도를 불러올 수 없어서 간단한 지도로 보여 드려요. GitHub Pages 주소로 열면 실제 지도(OpenStreetMap)와 바다 지형 지도가 나와요.</p>
+        <p class="mapnote">두 손가락으로 벌리거나 오므려 확대·축소하고, 끌어서 지도를 움직여요.</p>
+      </div>
+      <div class="loclist" id="locList"></div>
+    </div>
   </section>
 
   <section id="game" hidden>
@@ -245,6 +867,7 @@ body.touch.playing .pad .act{grid-template-columns:repeat(2,minmax(84px,108px));
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 (()=>{
 let W=960;const H=540,STAGE=7200;
@@ -458,35 +1081,114 @@ function buildMenu(){
     box.appendChild(el);
   }
 }
-/* ---------- 지도 ---------- */
+/* ---------- 지도: 실제 지도(OpenStreetMap·바다 지형) + 손가락 확대·이동 + 검색 ---------- */
 const COAST=[[126.55,37.78],[126.6,37.55],[126.62,37.42],[126.75,37.3],[126.65,37.2],[126.85,37.0],[126.7,36.95],[126.45,37.0],[126.35,36.95],[126.2,36.86],[126.12,36.74],[126.18,36.62],[126.3,36.55],[126.33,36.45],[126.45,36.38],[126.52,36.33],[126.55,36.1],[126.7,36.0],[126.68,35.82],[126.48,35.66],[126.6,35.55],[126.45,35.4],[126.38,35.25],[126.45,35.05],[126.3,34.95],[126.42,34.78],[126.35,34.56],[126.53,34.3],[126.75,34.48],[126.9,34.38],[127.1,34.55],[127.3,34.45],[127.45,34.62],[127.55,34.85],[127.73,34.72],[127.8,34.86],[127.95,34.95],[128.0,34.8],[128.07,34.92],[128.3,34.96],[128.43,34.82],[128.55,34.9],[128.65,34.72],[128.75,35.0],[128.95,35.08],[129.05,35.08],[129.2,35.18],[129.35,35.45],[129.45,35.75],[129.55,36.0],[129.58,36.08],[129.45,36.05],[129.4,36.3],[129.42,36.55],[129.4,36.85],[129.4,37.05],[129.3,37.3],[129.18,37.45],[129.05,37.6],[128.9,37.78],[128.79,37.94],[128.65,38.08],[128.55,38.25],[128.47,38.42],[128.37,38.62],[127.5,38.32],[127.0,38.02]];
 const ISLES=[[126.55,33.37,0.35,0.17],[126.15,34.99,0.06,0.05],[126.02,34.86,0.07,0.04],[126.22,34.76,0.05,0.04],[125.95,35.08,0.05,0.03],[126.12,36.63,0.03,0.02],[128.33,34.68,0.06,0.04],[128.25,34.62,0.05,0.03],[128.47,34.72,0.04,0.03],[127.95,34.78,0.09,0.07],[130.87,37.5,0.05,0.04]];
-const MPX=(lon,lat)=>[((lon-125.6)*100).toFixed(1),((38.7-lat)*124).toFixed(1)];
-const MAPVIEW={east:'230 20 230 430',west:'0 110 190 420',south:'70 400 330 170'};
-let mapSea='east',mapSel=null;
-function openMap(k){mapSea=k;mapSel=SEAS[k].locs[0];renderMap();show('map');}
-function renderMap(){
-  const S=SEAS[mapSea];$('#mapTitle').textContent=`${S.name} 지도`;
-  const land=COAST.map(([a,b],i)=>(i?'L':'M')+MPX(a,b).join(' ')).join('')+'Z';
+const MPX=(lon,lat)=>[(lon-125.6)*100,(38.7-lat)*124];
+const MAPVIEW={east:[230,20,230,430],west:[0,110,190,420],south:[70,400,330,170]};
+let mapSea='east',mapSel=null,LMAP=null,LMK={},mapMode=null,tileOK=false,svgVB=null;
+function openMap(k){mapSea=k;mapSel=SEAS[k].locs[0];show('map');renderMap(true);}
+function locText(L){return [L.name,L.place,L.desc,SEAS[L.sea].name,...L.terrain.map(z=>[z[2].label||'',z[2].name||'',z[0]==='wreck'?(z[2].kind==='sinan'?'침몰선 난파선 신안선 유물':'침몰선 난파선 고려 침몰선 유물 청자'):'',z[0]==='island'?'섬':'',z[0]==='tetra'?'방파제 테트라포드':'',z[0]==='harbor'||z[0]==='quay'?'항구':'',z[0]==='mudflat'?'갯벌':''].join(' ')),...L.list.map(s=>s.n)].join(' ');}
+function selectLoc(id,fly){const L=LOCS[id];if(L.sea!==mapSea){mapSea=L.sea;}mapSel=id;renderList();renderMarkers();
+  if(fly&&mapMode==='real'&&LMAP)LMAP.flyTo([L.lat,L.lon],11,{duration:0.8});
+  if(fly&&mapMode==='svg'){const [x,y]=MPX(L.lon,L.lat);svgVB=[x-60,y-50,120,100];applyVB();}
+  const c=$('#loc-'+id);if(c)c.scrollIntoView({block:'nearest',behavior:'smooth'});}
+function renderMap(fit){
+  $('#mapTitle').textContent=`${SEAS[mapSea].name} 지도`;
+  document.querySelectorAll('.seatab').forEach(b=>b.setAttribute('aria-selected',b.dataset.sea===mapSea));
+  if(mapMode!=='svg'&&window.L&&!LMAP)initReal();
+  if(mapMode==='real'){renderMarkers();if(fit)fitSea();setTimeout(()=>LMAP&&LMAP.invalidateSize(),60);}
+  else{mapMode='svg';renderSvg(fit);}
+  renderList();
+}
+function fitSea(){const pts=SEAS[mapSea].locs.map(id=>[LOCS[id].lat,LOCS[id].lon]);const b=window.L.latLngBounds(pts).pad(pts.length>1?0.9:0.5);LMAP.fitBounds(b,{maxZoom:9});}
+function initReal(){
+  try{
+    const box=$('#mapSvg');box.innerHTML='<div id="lmap"></div>';
+    LMAP=window.L.map('lmap',{zoomControl:true,attributionControl:true,minZoom:5,maxZoom:15,worldCopyJump:false}).setView([36,127.8],7);
+    const osm=window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap 기여자'});
+    const ocean=window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:13,attribution:'바다 지형: Esri, GEBCO, NOAA'});
+    osm.addTo(LMAP);mapMode='real';$('#zoomB').hidden=true;let loaded=0,errs=0;
+    const onload=()=>{loaded++;tileOK=true;};const onerr=()=>{errs++;if(!tileOK&&errs>=3&&mapMode==='real')fallbackSvg();};
+    osm.on('tileload',onload).on('tileerror',onerr);ocean.on('tileload',onload).on('tileerror',onerr);
+    const sw=$('#layerSwitch');sw.hidden=false;sw.querySelectorAll('button').forEach(b=>b.onclick=()=>{const want=b.dataset.layer;
+      sw.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      if(want==='ocean'){LMAP.removeLayer(osm);ocean.addTo(LMAP);}else{LMAP.removeLayer(ocean);osm.addTo(LMAP);}});
+    setTimeout(()=>{if(!tileOK&&errs>0)fallbackSvg();},3500);
+  }catch(e){fallbackSvg();}
+}
+function fallbackSvg(){if(mapMode==='svg'&&!LMAP)return;$('#zoomB').hidden=false;if(LMAP){try{LMAP.remove();}catch(e){}LMAP=null;}mapMode='svg';LMK={};$('#layerSwitch').hidden=true;
+  $('#mapNote').hidden=false;renderSvg(true);}
+function pinHTML(L,sel){const clear=REC[L.id]&&REC[L.id].clears>0;
+  return `<div class="lpin${sel?' sel':''}${L.sea===mapSea?'':' other'}" style="--c:${L.accent}"><span class="dot">${clear?'✓':''}</span><span class="nm">${L.name}</span></div>`;}
+function renderMarkers(){
+  if(mapMode!=='real'||!LMAP)return;
+  for(const id of LOC_ORDER){const L=LOCS[id];
+    const icon=window.L.divIcon({className:'lpinwrap',html:pinHTML(L,id===mapSel),iconSize:[18,18],iconAnchor:[9,9]});
+    if(!LMK[id]){LMK[id]=window.L.marker([L.lat,L.lon],{icon,keyboard:true,title:L.name}).addTo(LMAP);LMK[id].on('click',()=>selectLoc(id,false));}
+    else LMK[id].setIcon(icon);
+    LMK[id].setZIndexOffset(id===mapSel?1000:L.sea===mapSea?500:0);}
+}
+/* 간단한 지도(실제 지도를 불러올 수 없을 때): 손가락으로 확대·이동 */
+function renderSvg(fit){
+  if(fit||!svgVB)svgVB=MAPVIEW[mapSea].slice();
+  const land=COAST.map(([a,b],i)=>(i?'L':'M')+MPX(a,b).map(v=>v.toFixed(1)).join(' ')).join('')+'Z';
   const isles=ISLES.map(([a,b,rx,ry])=>{const [x,y]=MPX(a,b);return `<ellipse cx="${x}" cy="${y}" rx="${rx*100}" ry="${ry*124}"/>`;}).join('');
   const pins=LOC_ORDER.map(id=>{const L=LOCS[id],[x,y]=MPX(L.lon,L.lat),mine=L.sea===mapSea,sel=id===mapSel,clear=REC[id]&&REC[id].clears>0;
-    const lx=L.sea==='west'?-8:8,anchor=L.sea==='west'?'end':'start',ly=L.sea==='south'?(id==='tongyeong'?16:-10):4;
-    return `<g class="pin${mine?'':' dim'}${sel?' sel':''}" data-id="${id}" ${mine?`tabindex="0" role="button" aria-label="${L.name}"`:''}>
-      <circle cx="${x}" cy="${y}" r="${sel?7:5}" fill="${mine?L.accent:'#6a7a80'}"/>${clear?`<text x="${x}" y="${+y+3.5}" class="chk" text-anchor="middle">✓</text>`:''}
-      ${mine?`<text x="${+x+lx}" y="${+y+ly}" text-anchor="${anchor}" class="plabel">${L.name}</text>`:''}</g>`;}).join('');
-  $('#mapSvg').innerHTML=`<svg viewBox="${MAPVIEW[mapSea]}" role="img" aria-label="${S.name} 지도"><defs><linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e6a96"/><stop offset="1" stop-color="#0f3f62"/></linearGradient></defs>
-    <rect x="-50" y="-50" width="600" height="800" fill="url(#seaG)"/><path d="${land}" class="land"/><g class="land">${isles}</g>
-    <text class="seaname" ${mapSea==='east'?'x="400" y="260"':mapSea==='west'?'x="30" y="330"':'x="230" y="545"'}>${S.name}</text>${pins}</svg>`;
-  $('#mapSvg').querySelectorAll('.pin:not(.dim)').forEach(g=>{const go=()=>{mapSel=g.dataset.id;renderMap();const c=$('#loc-'+mapSel);if(c)c.scrollIntoView({block:'nearest',behavior:'smooth'});};
-    g.onclick=go;g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};});
+    return `<g class="pin${mine?'':' dim'}${sel?' sel':''}" data-id="${id}" tabindex="0" role="button" aria-label="${L.name}">
+      <circle cx="${x}" cy="${y}" r="${sel?6:4.5}" fill="${L.accent}"/>${clear?`<text x="${x}" y="${y+3}" class="chk" text-anchor="middle">✓</text>`:''}
+      <text x="${x+7}" y="${y+3.5}" class="plabel">${L.name}</text></g>`;}).join('');
+  $('#mapSvg').innerHTML=`<svg id="msvg" role="img" aria-label="한국 바다 지도"><rect x="-200" y="-200" width="900" height="1100" fill="#16557e"/><path d="${land}" class="land"/><g class="land">${isles}</g>
+    <text class="seaname" x="390" y="250">동해</text><text class="seaname" x="10" y="330">서해</text><text class="seaname" x="250" y="540">남해</text>${pins}</svg>`;
+  applyVB();bindSvgGestures();
+}
+function applyVB(){const s=$('#msvg');if(s)s.setAttribute('viewBox',svgVB.map(v=>v.toFixed(1)).join(' '));
+  const k=svgVB[2]/230;document.querySelectorAll('#msvg .plabel').forEach(t=>t.style.fontSize=(10*k).toFixed(2)+'px');
+  document.querySelectorAll('#msvg .pin circle').forEach(c=>{const sel=c.parentNode.classList.contains('sel');c.setAttribute('r',((sel?6:4.5)*k).toFixed(2));c.style.strokeWidth=(1.6*k).toFixed(2);});
+  document.querySelectorAll('#msvg .plabel').forEach(t=>{const c=t.previousElementSibling.tagName==='circle'?t.previousElementSibling:t.parentNode.querySelector('circle');t.setAttribute('x',(+c.getAttribute('cx')+7*k).toFixed(1));t.setAttribute('y',(+c.getAttribute('cy')+3.5*k).toFixed(1));});}
+function bindSvgGestures(){
+  const s=$('#msvg');if(!s)return;const pts=new Map();let moved=0,start=null;
+  const toSvg=(cx,cy)=>{const r=s.getBoundingClientRect(),sc=Math.max(svgVB[2]/r.width,svgVB[3]/r.height);
+    const ox=(r.width*sc-svgVB[2])/2,oy=(r.height*sc-svgVB[3])/2;return[svgVB[0]-ox+(cx-r.left)*sc,svgVB[1]-oy+(cy-r.top)*sc,sc];};
+  const zoomAt=(cx,cy,f)=>{const [x,y]=toSvg(cx,cy);const nw=clamp(svgVB[2]*f,18,520),k=nw/svgVB[2];svgVB=[x-(x-svgVB[0])*k,y-(y-svgVB[1])*k,nw,svgVB[3]*k];applyVB();};
+  s.addEventListener('pointerdown',e=>{pts.set(e.pointerId,[e.clientX,e.clientY]);try{s.setPointerCapture(e.pointerId);}catch(_){}moved=0;start=[e.clientX,e.clientY];});
+  s.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const prev=pts.get(e.pointerId);
+    if(pts.size===1){const [,,sc]=toSvg(0,0);svgVB[0]-=(e.clientX-prev[0])*sc;svgVB[1]-=(e.clientY-prev[1])*sc;moved+=Math.abs(e.clientX-prev[0])+Math.abs(e.clientY-prev[1]);applyVB();}
+    else if(pts.size===2){const other=[...pts.entries()].find(([k])=>k!==e.pointerId)[1];
+      const d0=Math.hypot(prev[0]-other[0],prev[1]-other[1]),d1=Math.hypot(e.clientX-other[0],e.clientY-other[1]);if(d0>0&&d1>0)zoomAt((e.clientX+other[0])/2,(e.clientY+other[1])/2,d0/d1);moved+=10;}
+    pts.set(e.pointerId,[e.clientX,e.clientY]);});
+  const up=e=>{pts.delete(e.pointerId);};s.addEventListener('pointerup',up);s.addEventListener('pointercancel',up);
+  s.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.clientX,e.clientY,e.deltaY>0?1.15:0.87);},{passive:false});
+  s.querySelectorAll('.pin').forEach(g=>{const go=()=>{if(moved>6)return;selectLoc(g.dataset.id,false);renderSvg(false);};
+    g.addEventListener('click',go);g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();moved=0;go();}};});
+}
+function mapZoom(f){if(mapMode==='real'&&LMAP){f<1?LMAP.zoomIn():LMAP.zoomOut();return;}const r=$('#msvg').getBoundingClientRect();
+  const s=$('#msvg');if(!s)return;const cx=r.left+r.width/2,cy=r.top+r.height/2;const [x,y]=[svgVB[0]+svgVB[2]/2,svgVB[1]+svgVB[3]/2];const nw=clamp(svgVB[2]*f,18,520),k=nw/svgVB[2];svgVB=[x-svgVB[2]*k/2,y-svgVB[3]*k/2,nw,svgVB[3]*k];applyVB();}
+function renderList(){
+  const S=SEAS[mapSea];$('#mapTitle').textContent=`${S.name} 지도`;
+  document.querySelectorAll('.seatab').forEach(b=>b.setAttribute('aria-selected',b.dataset.sea===mapSea));
   $('#locList').innerHTML=S.locs.map(id=>{const L=LOCS[id],r=REC[id];
     const kinds=[...new Set(L.terrain.map(z=>z[2].label||({island:z[2].name,wreck:z[2].kind==='sinan'?'신안선 침몰 해역':'고려 침몰선'})[z[0]]).filter(Boolean))].slice(0,5);
     return `<article class="loc${id===mapSel?' sel':''}" id="loc-${id}"><h3>${L.name}${r.clears?' <span class="badge">클리어</span>':''}</h3><p class="lplace">${L.place}</p><p>${L.desc}</p>
       <p class="route"><b>지형</b> ${kinds.join(' → ')}</p>
-      <div class="chips">${L.list.filter(s=>s.at!=='partner'||1).map(s=>`<span class="chip${s.aggr?' atk':''}${s.protect?' pro':''}">${s.n}</span>`).join('')}</div>
-      <div class="lrow"><span class="lbest">${r.plays?`최고 ${r.best.toLocaleString()}점`:'아직 안 가 봤어요'}</span><button class="btn" type="button" data-go="${id}" style="background:${L.accent}">${L.name} 출발</button></div></article>`;}).join('');
+      <div class="chips">${L.list.map(s=>`<span class="chip${s.aggr?' atk':''}${s.protect?' pro':''}">${s.n}</span>`).join('')}</div>
+      <div class="lrow"><button class="btn ghost" type="button" data-show="${id}" style="font-size:13px;padding:7px 12px">지도에서 보기</button><span class="lbest">${r.plays?`최고 ${r.best.toLocaleString()}점`:'아직 안 가 봤어요'}</span><button class="btn" type="button" data-go="${id}" style="background:${L.accent}">출발</button></div></article>`;}).join('');
   $('#locList').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>start(b.dataset.go));
+  $('#locList').querySelectorAll('[data-show]').forEach(b=>b.onclick=()=>{selectLoc(b.dataset.show,true);if(mapMode==='svg')renderSvg(false);$('#mapSvg').scrollIntoView({block:'nearest',behavior:'smooth'});});
 }
+/* 검색: 동해·서해·남해 전체에서 장소·지형·생물 이름으로 찾기 */
+function runSearch(){
+  const q=$('#mapQ').value.trim(),box=$('#mapResults');
+  if(!q){box.innerHTML='';box.hidden=true;return;}
+  const words=q.split(/\s+/);
+  const hits=LOC_ORDER.filter(id=>{const t=locText(LOCS[id]);return words.every(w=>t.includes(w));});
+  box.hidden=false;
+  box.innerHTML=hits.length?hits.map(id=>{const L=LOCS[id],t=locText(L),why=words.map(w=>{const sp=L.list.find(s=>s.n.includes(w));return sp?`${sp.n} 사는 곳`:'';}).filter(Boolean).join(', ');
+    return `<button type="button" class="hit" data-id="${id}"><b>${L.name}</b><span>${SEAS[L.sea].name} · ${L.place}${why?' · '+why:''}</span></button>`;}).join('')
+    :`<p class="nohit">"${q.replace(/[<>&"]/g,'')}"에 맞는 장소가 없어요. 장소 이름(예: 통영), 지형(예: 침몰선), 생물 이름(예: 낙지)으로 찾아보세요.</p>`;
+  box.querySelectorAll('.hit').forEach(b=>b.onclick=()=>{selectLoc(b.dataset.id,true);if(mapMode==='svg')renderSvg(false);box.hidden=true;});
+}
+
 /* ---------- 기록 · 도감 ---------- */
 const REC_KEY='octopus-sea-records-v2';
 function blankRec(){return{plays:0,clears:0,best:0,bestDist:0,eaten:0,bossBest:null,relics:0,dex:{}};}
@@ -585,6 +1287,10 @@ $('#bQuit').onclick=()=>{if(G)saveRecord(G,false);G=null;openMap(lastSea);};
 $('#bAgain').onclick=()=>start(lastLoc);
 $('#bMenu').onclick=()=>openMap(lastSea);
 $('#bMapBack').onclick=()=>show('menu');
+document.querySelectorAll('.seatab').forEach(b=>b.onclick=()=>{mapSea=b.dataset.sea;mapSel=SEAS[mapSea].locs[0];renderMap(true);});
+$('#mapQ').addEventListener('input',runSearch);
+$('#mapQ').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runSearch();const f=$('#mapResults .hit');if(f)f.click();}if(e.key==='Escape'){$('#mapResults').hidden=true;}});
+$('#zIn').onclick=()=>mapZoom(0.75);$('#zOut').onclick=()=>mapZoom(1.33);
 $('#bRec3').onclick=()=>openRecords('map',lastLoc);
 $('#bRec').onclick=()=>openRecords('menu',lastLoc);
 $('#bRec2').onclick=()=>openRecords('end',lastLoc);
