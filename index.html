@@ -835,6 +835,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
       <div class="tools">
         <button class="btn ghost" id="bPad" type="button">화면 버튼 보기</button>
         <button class="btn ghost" id="bFull" type="button" hidden>전체 화면</button>
+        <button class="btn ghost" id="bSnd" type="button">소리 켬</button>
         <button class="btn ghost" id="bPause" type="button">일시정지</button>
         <button class="btn ghost" id="bQuit" type="button">지도로</button>
       </div>
@@ -1456,11 +1457,42 @@ function pBox(){const p=G.p;return p.lie?{x1:p.x-46,x2:p.x+46,y1:p.y-38,y2:p.y-2
 function cBox(c){const w=c.bw||c.w;return{x1:c.x-w*0.42,x2:c.x+w*0.42,y1:c.y-c.h*0.42,y2:c.y+c.h*0.42};}
 function puff(x,y,n,col,sz){for(let i=0;i<n;i++)G.parts.push({x,y,vx:R(-1.2,1.2),vy:R(-1.2,0.6),r:R(sz*0.5,sz),g:R(0.15,0.4),life:R(40,70),max:70,col});}
 function bubble(x,y){G.parts.push({x,y,vx:R(-0.3,0.3),vy:R(-1.4,-0.6),r:R(1.5,3.5),g:0,life:R(50,90),max:90,col:'bub'});}
+/* ---------- 효과음: 파일 없이 브라우저에서 직접 합성해요 ---------- */
+const SFX=(()=>{let ac=null,master=null,nbuf=null,on=true;try{on=localStorage.getItem('octoSnd')!=='0';}catch(e){}
+  const unlock=()=>{if(!ac){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;ac=new A();master=ac.createGain();master.gain.value=0.45;master.connect(ac.destination);
+      nbuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=nbuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}catch(e){ac=null;return;}}
+    if(ac.state==='suspended')ac.resume();};
+  if(typeof addEventListener==='function'){addEventListener('pointerdown',unlock,{passive:true});addEventListener('keydown',unlock);}
+  const env=(g,t,a,v,dur)=>{g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);};
+  function tone(f0,f1,dur,type,vol,dl){const t=ac.currentTime+(dl||0),o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+dur);env(g,t,0.008,vol,dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+0.03);}
+  function noise(dur,f0,f1,vol,type,dl,q){const t=ac.currentTime+(dl||0),n=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();n.buffer=nbuf;f.type=type||'lowpass';f.Q.value=q||1;
+    f.frequency.setValueAtTime(f0,t);if(f1)f.frequency.exponentialRampToValueAtTime(f1,t+dur);env(g,t,0.01,vol,dur);n.connect(f);f.connect(g);g.connect(master);n.start(t,Math.random()*0.5);n.stop(t+dur+0.03);}
+  const last={},gap={ink:90,eat:60,hurt:200,jump:80,splash:150,block:200};
+  function play(k){if(!on||!ac||ac.state!=='running')return;const now=performance.now();if(now-(last[k]||0)<(gap[k]||60))return;last[k]=now;
+    switch(k){
+      case 'ink':noise(0.16,2400,300,0.35,'lowpass');tone(320,120,0.12,'sine',0.12);break;                       // 퓩
+      case 'inkLong':noise(0.42,3000,250,0.4,'lowpass');tone(260,90,0.3,'sine',0.14);break;                       // 푸슈욱
+      case 'jump':tone(240,620,0.16,'sine',0.18);noise(0.12,1800,600,0.08,'bandpass',0.02,3);break;               // 뿅 + 물방울
+      case 'eat':tone(520,780,0.07,'triangle',0.22);tone(780,1040,0.09,'triangle',0.2,0.07);break;              // 냠
+      case 'hurt':tone(300,110,0.28,'square',0.13);noise(0.18,900,200,0.15,'lowpass');break;                     // 아얏
+      case 'block':tone(900,700,0.08,'triangle',0.18);tone(1300,1100,0.1,'triangle',0.1,0.03);break;            // 껍데기 탁
+      case 'shellIn':tone(700,260,0.1,'sine',0.2);break;                                                         // 쏙
+      case 'shellOut':tone(260,700,0.1,'sine',0.18);break;                                                       // 뽁
+      case 'splash':noise(0.45,1600,300,0.32,'lowpass');noise(0.25,4000,1500,0.08,'highpass',0.05);break;        // 풍덩
+      case 'special':[392,523,659,784].forEach((f,i)=>tone(f,0,0.18,'triangle',0.16,i*0.06));noise(0.35,600,3000,0.08,'bandpass',0.05,2);break; // 필살기
+      case 'boss':tone(98,92,0.9,'sawtooth',0.09);tone(147,139,0.9,'sawtooth',0.06,0.05);noise(0.8,300,80,0.18,'lowpass');break; // 보스 등장
+      case 'bossDown':[523,659,784,1047].forEach((f,i)=>tone(f,0,0.3,'triangle',0.15,i*0.09));break;            // 보스 물리침
+      case 'win':[523,659,784,659,784,1047].forEach((f,i)=>tone(f,0,i===5?0.6:0.16,'triangle',0.16,i*0.12));break; // 승리
+      case 'lose':[392,349,311,262].forEach((f,i)=>tone(f,0,0.3,'triangle',0.14,i*0.18));break;                  // 패배
+    }}
+  return{play,unlock,get on(){return on},toggle(){on=!on;try{localStorage.setItem('octoSnd',on?'1':'0');}catch(e){}unlock();return on;}};
+})();
+{const sb=$('#bSnd'),lab=()=>{sb.textContent=SFX.on?'소리 켬':'소리 끔';};lab();sb.onclick=()=>{SFX.toggle();lab();};}
 function hurt(d,fromX,why){
   const p=G.p;if(G.phase==='end'||(G.boss&&G.boss.rescue&&G.boss.state==='free'))return;
-  if(p.shell>0){if(!p.blockT){p.blockT=24;floatText(p.x,p.y-90,'껍데기로 막았다!','#b8f0c8');G.shake=4;}return;}
+  if(p.shell>0){if(!p.blockT){p.blockT=24;floatText(p.x,p.y-90,'껍데기로 막았다!','#b8f0c8');G.shake=4;SFX.play('block');}return;}
   if(p.inv>0||p.sp||p.safe>0)return;
-  p.en-=d;p.inv=70;G.shake=10;floatText(p.x,p.y-96,'-'+d,'#ff8b7d');
+  p.en-=d;p.inv=70;SFX.play('hurt');G.shake=10;floatText(p.x,p.y-96,'-'+d,'#ff8b7d');
   p.vx=(p.x<fromX?-1:1)*5;p.vy=Math.min(p.vy,-3.5);p.on=false;
   if(why)toast(why,null,'#ff9a8c');
   if(p.en<=0){p.en=0;endGame(false);}
@@ -2208,7 +2240,7 @@ function shapeMarlin(s,w,h,t,ph){
 }
 /* ---------- 최종 보스: 흑범고래 ---------- */
 function startWhale(){const S=G.S,g=S.ground,hp=G.p.max*4;G.boss={whale:1,x:STAGE+W+300,y:S.sf+(g-S.sf)*0.45,vx:0,vy:0,hp,max:hp,t:0,state:'enter',face:-1,pat:'cruise',pt:150,hitT:0,waves:[],rings:[],mouth:0,ph:0};
-  toast('보스 · 흑범고래 등장!',null,'#ffb0a3');}
+  toast('보스 · 흑범고래 등장!',null,'#ffb0a3');SFX.play('boss');}
 function whaleBox(B){return{x1:B.x-130,x2:B.x+130,y1:B.y-36,y2:B.y+36};}
 function updateWhale(B){
   const p=G.p,S=G.S,g=S.ground,top=S.sf+46,bot=g-56,midY=(top+bot)/2;B.t++;if(B.hitT>0)B.hitT--;const rage=B.hp<B.max*0.5;B.mouth*=0.9;
@@ -2234,7 +2266,7 @@ function updateWhale(B){
         B.tx=clamp(p.x,STAGE+80,STAGE+W-80);B.vx=clamp((B.tx-B.x)/Math.max(1,n),-7,7);B.face=B.vx<0?-1:1;}
       else{B.x+=B.vx;B.y+=B.vy;B.face=B.vx<0?-1:1;
         if(!B.inW){if(B.y<S.sf){B.vy+=0.45;B.air=1;}else B.vy+=0.15;
-          if(B.air&&B.vy>0&&B.y>S.sf+10){B.air=0;B.inW=1;G.shake=Math.max(G.shake,7);for(let i=0;i<26;i++)G.parts.push({x:B.x+R(-50,50),y:S.sf,vx:R(-3,3),vy:R(-6,-2),r:R(2,5),g:0.2,life:40,max:40,col:'rgba(240,250,255,0.95)'});B.rings.push({x:B.x,y:S.sf,r:10,life:50,splash:1});}}
+          if(B.air&&B.vy>0&&B.y>S.sf+10){B.air=0;B.inW=1;G.shake=Math.max(G.shake,7);SFX.play('splash');for(let i=0;i<26;i++)G.parts.push({x:B.x+R(-50,50),y:S.sf,vx:R(-3,3),vy:R(-6,-2),r:R(2,5),g:0.2,life:40,max:40,col:'rgba(240,250,255,0.95)'});B.rings.push({x:B.x,y:S.sf,r:10,life:50,splash:1});}}
         else{B.vy=B.vy*0.94-0.12;B.vx*=0.97; // 물에 들어간 뒤엔 머리를 들며 부드럽게 빠져나와요
           if(Math.abs(p.x-B.x)<110&&Math.abs((p.y-40)-B.y)<70&&!B.slam){B.slam=1;hurt(24,B.x,'흑범고래가 덮쳤어요!');}
           if(B.vy<0.8||B.y>=bot-2||B.ph>320){B.pat='cruise';B.inW=0;B.launched=0;B.slam=0;B.pt=rage?80:130;}}
@@ -2253,7 +2285,7 @@ function updateWhale(B){
   }
   else if(B.state==='down'){ // 쫓아냈어요: 흑범고래가 먼바다로 물러나요
     B.t2=(B.t2||0)+1;B.face=1;B.vx=Math.min(9,(B.vx||0)+0.2);B.x+=B.vx;B.y+=((top+10)-B.y)*0.02;
-    if(B.t2===1){toast('흑범고래가 먼바다로 물러났어요!',null,'#fff3c4');G.score+=3000;B.waves=[];B.rings=[];}
+    if(B.t2===1){toast('흑범고래가 먼바다로 물러났어요!',null,'#fff3c4');SFX.play('bossDown');G.score+=3000;B.waves=[];B.rings=[];}
     if(B.t2>150){G.boss=null;endGame(true);return;}
   }
   for(const w of B.waves){w.x+=w.dir*7;w.life--;const pb=pBox();if(pb.y2>g-34&&Math.abs(p.x-w.x)<30&&!w.hit){w.hit=1;hurt(17,w.x,'충격파! 뛰어서 피해요');}}
@@ -2357,7 +2389,7 @@ function behave(c,S,p){
       const lo=S.sf+c.h*0.45,hi=GR-c.h*0.55;
       if(c.st==='rest'){c.x=bx;c.y=topY-c.h*0.32;c.vx=0;c.vy=0;c.rot=0;c.face=p.x<c.x?-1:1;c.danger=0;
         const pin=!p.air&&p.y-40>S.sf+10;
-        if(pin&&Math.abs(p.x-c.x)<300&&c.cd<=0&&!(p.shell>0)){c.st='dive';c.vx=Math.sign(p.x-c.x||1)*3.2;c.vy=-5;floatText(c.x,c.y-40,'풍덩!','#cfe6ee');
+        if(pin&&Math.abs(p.x-c.x)<300&&c.cd<=0&&!(p.shell>0)){c.st='dive';c.vx=Math.sign(p.x-c.x||1)*3.2;c.vy=-5;floatText(c.x,c.y-40,'풍덩!','#cfe6ee');SFX.play('splash');
           if(!G.sealHint){G.sealHint=1;toast(`${sp.n}가 문어를 노려요! 먹물로 쫓아내요`,null,'#ffb0a3');}}}
       else if(c.st==='dive'){c.vy+=0.3;c.x+=c.vx;c.y+=c.vy;c.face=c.vx<0?-1:1;c.rot=clamp(Math.atan2(c.vy,Math.abs(c.vx))*0.8,-0.9,1.1);
         if(c.y>S.sf+16&&c.vy>0){c.st='hunt';c.ht=0;for(let i=0;i<12;i++)G.parts.push({x:c.x+R(-14,14),y:S.sf,vx:R(-1.6,1.6),vy:R(-3.2,-1),r:R(2,4),g:0.15,life:30,max:30,col:'rgba(235,248,255,0.9)'});}}
@@ -2448,11 +2480,11 @@ function step(){
   // --- 플레이어
   if(p.blockT>0)p.blockT--;if(p.safe>0&&!p.sp)p.safe--;
   while(hideQ>0){hideQ--;
-    if(p.shell>0){p.shell=0;p.safe=Math.max(p.safe||0,45);floatText(p.x,p.y-90,'나왔다!','#b8f0c8');}
-    else if((p.shells||0)>0&&!p.grabbed&&!p.sp){p.shells--;p.shell=270;p.lie=false;floatText(p.x,p.y-100,'쏙!','#b8f0c8');
+    if(p.shell>0){p.shell=0;p.safe=Math.max(p.safe||0,45);floatText(p.x,p.y-90,'나왔다!','#b8f0c8');SFX.play('shellOut');}
+    else if((p.shells||0)>0&&!p.grabbed&&!p.sp){p.shells--;p.shell=270;p.lie=false;floatText(p.x,p.y-100,'쏙!','#b8f0c8');SFX.play('shellIn');
       if(!G.shellUseHint){G.shellUseHint=1;toast('껍데기 속에 숨었어요!',null,'#b8f0c8');}}
     else if(!G.noShellT||G.t-G.noShellT>120){G.noShellT=G.t;toast('껍데기가 없어요 (조개를 먹으면 생겨요)',null,'#cfe6ee');}}
-  if(p.shell>0){p.shell--;p.vx*=0.5;keys.left=keys.right=0;inkQ=0;inkHold=0;if(p.shell===0){floatText(p.x,p.y-90,'나왔다!','#b8f0c8');p.safe=Math.max(p.safe||0,45);}}
+  if(p.shell>0){p.shell--;p.vx*=0.5;keys.left=keys.right=0;inkQ=0;inkHold=0;if(p.shell===0){floatText(p.x,p.y-90,'나왔다!','#b8f0c8');SFX.play('shellOut');p.safe=Math.max(p.safe||0,45);}}
   if(p.grabbed){const n=jumpQ+inkQ+specialQ;jumpQ=inkQ=specialQ=0;if(G.boss&&n){G.boss.grip-=n;bubble(p.x+R(-20,20),p.y-50);}}
   if(p.shell>0){jumpQ=0;specialQ=0;}
   while(specialQ>0){specialQ--;trySpecial();}
@@ -2466,7 +2498,7 @@ function step(){
   else p.vx*=0.84;
   p.vx=clamp(p.vx,-maxv,maxv);
   while(jumpQ>0){jumpQ--;
-    if(p.jumps<(p.air?1:7)&&!(p.trap>0)){p.jumps++;const v=-9.8*Math.sqrt(p.jumps);if(p.vy>v)p.vy=v;p.on=false;p.onRock=false;p.lie=false;p.jt=40;for(let i=0;i<4;i++)bubble(p.x+R(-14,14),p.y-4);}
+    if(p.jumps<(p.air?1:7)&&!(p.trap>0)){p.jumps++;const v=-9.8*Math.sqrt(p.jumps);if(p.vy>v)p.vy=v;p.on=false;p.onRock=false;p.lie=false;p.jt=40;SFX.play('jump');for(let i=0;i<4;i++)bubble(p.x+R(-14,14),p.y-4);}
   }
   const prevX=p.x,prevY=p.y;
   if(p.trap>0){p.trap--;p.vx=0;if(G.t%6===0)bubble(p.x+R(-20,20),p.y-50);}
@@ -2482,9 +2514,9 @@ function step(){
   solidRocks(prevX);
   if(p.inv>0)p.inv--; if(p.cd>0)p.cd--; if(p.jt>0)p.jt--;
   p.ink=Math.min(100,p.ink+(G.phase==='boss'?0.34:0.28));
-  if(inkQ>0&&G.t-(p.lastTap??-99)<20&&p.ink>=16&&!p.long){inkQ=0;p.lastTap=-99;p.cd=22;p.ink-=16;p.spray=12;p.long=1;
+  if(inkQ>0&&G.t-(p.lastTap??-99)<20&&p.ink>=16&&!p.long){inkQ=0;p.lastTap=-99;p.cd=22;p.ink-=16;p.spray=12;p.long=1;SFX.play('inkLong');
     if(!G.longHint){G.longHint=1;toast('먹물 멀리 뿜기!',null,'#c8b8f0');}}
-  else if((inkQ>0||inkHold)&&p.cd<=0&&p.ink>=7){if(inkQ>0)p.lastTap=G.t;inkQ=0;p.cd=11;p.ink-=7;p.spray=7;p.long=0;} else {if(inkQ>0)p.lastTap=G.t;inkQ=0;}
+  else if((inkQ>0||inkHold)&&p.cd<=0&&p.ink>=7){if(inkQ>0)p.lastTap=G.t;inkQ=0;p.cd=11;p.ink-=7;p.spray=7;p.long=0;SFX.play('ink');} else {if(inkQ>0)p.lastTap=G.t;inkQ=0;}
   if(p.spray>0){
     p.spray--;if(p.spray<=0)p.long=0;
     const my=p.lie?p.y-24:p.y-38,mx=p.x+p.face*(p.lie?50:30),low=p.lie?1:0;
@@ -2569,7 +2601,7 @@ function step(){
     else if(B&&B.rescue){if(!k.spent&&Math.abs(k.vx)>1.6&&rescueInkHit(B,k)){k.spent=1;k.vx*=0.25;G.p.spg=Math.min(100,G.p.spg+0.45);}}
     else if(B&&B.state==='fight'&&!k.spent&&Math.abs(k.vx)>1.6&&Math.abs(k.x-B.x)<90&&k.y>B.y-170&&k.y<B.y){
       k.spent=1;k.vx*=0.25;B.hp-=INK_BURST_BOSS/42;B.hitT=10;G.p.spg=Math.min(100,G.p.spg+0.45);
-      if(B.hp<=0){B.hp=0;B.state='down';B.t=0;toast('보스를 물리쳤어요!',null,'#fff3c4');}
+      if(B.hp<=0){B.hp=0;B.state='down';B.t=0;toast('보스를 물리쳤어요!',null,'#fff3c4');SFX.play('bossDown');}
     }
     if(k.life<=0)G.parts.push({x:k.x,y:k.y,vx:R(-0.2,0.2),vy:R(-0.3,0),r:k.r,g:0.22,life:45,max:45,col:'ink'});
   }
@@ -2585,7 +2617,7 @@ function step(){
   if(G.shake>0)G.shake--; if(G.blind>0)G.blind--; if(G.flash>0)G.flash--;
 }
 function updateParts(){for(const q of G.parts){q.x+=q.vx;q.y+=q.vy;q.r+=q.g;q.life--;}G.parts=G.parts.filter(q=>q.life>0);if(G.parts.length>500)G.parts.splice(0,G.parts.length-500);}
-function eat(c){
+function eat(c){SFX.play('eat');
   const p=G.p,sp=c.sp;G.eaten++;(G.dex[sp.n]||(G.dex[sp.n]={seen:1,eat:0})).eat++;
   if(sp.cat==='패류'){p.shells=Math.min(3,(p.shells||0)+1);p.shellType=sp.n;floatText(p.x,p.y-120,`${sp.n} 껍데기 +1`,'#b8f0c8');
     if(!G.shellHint){G.shellHint=1;toast(`${sp.n} 껍데기 획득! 숨기로 막아요`,null,'#b8f0c8');}}
@@ -2632,7 +2664,7 @@ function startBoss(){
   if(G.S.boss.whale){startWhale();return;}
   const hp=G.p.max*4;
   G.boss={x:STAGE+W+140,y:G.S.ground,vx:0,vy:0,hp,max:hp,t:0,state:'enter',pat:'idle',pt:0,hitT:0,home:STAGE+W-230,face:-1,on:true};
-  toast(`보스 · ${G.S.boss.name} 등장!`,null,'#ffb0a3');
+  toast(`보스 · ${G.S.boss.name} 등장!`,null,'#ffb0a3');SFX.play('boss');
 }
 function bossShoot(x,y,vx,vy,r){G.binks.push({x,y,vx,vy,r,life:220,w:R(0,6)});}
 function updateBoss(){
@@ -2782,7 +2814,7 @@ function drawBossAttacks(B){
 
 function endGame(win){
   if(G.phase==='end')return;
-  G.phase='end';G.win=win;G.endT=0;
+  G.phase='end';G.win=win;G.endT=0;SFX.play(win?'win':'lose');
   if(!win){G.shake=20;toast('에너지가 다 떨어졌어요',null,'#ff9a8c');}
   else toast('클리어!',null,'#fff3c4');
 }
@@ -3908,7 +3940,7 @@ function trySpecial(){
       const d=Math.hypot(dx,c.y-p.y)*(Math.sign(dx)===p.face?0.8:1.2);if(d<best){best=d;tgt={c};}
     }}
   if(!tgt){toast('근처에 잡을 생물이 없어요',null,'#f0c870');return;}
-  p.spg=0;p.sp={ph:'leap',t:0,tgt,e:0};p.vy=-11.5;p.vx=0;p.on=false;p.safe=9999;
+  p.spg=0;p.sp={ph:'leap',t:0,tgt,e:0};SFX.play('special');p.vy=-11.5;p.vx=0;p.on=false;p.safe=9999;
   if(tgt.c)tgt.c.held=1;
   floatText(p.x,p.y-120,'필살기!','#ffd36a');
   for(let i=0;i<10;i++)bubble(p.x+R(-20,20),p.y-10);
@@ -3932,7 +3964,7 @@ function grabHit(){
   if(T.piece){const B=T.boss;if(!T.piece.gone)breakPiece(B,T.piece,true);if(pieceLeft(B)===0){}}
   else if(T.boss){const B=T.boss;B.hp-=SPECIAL_BOSS_DMG;B.hitT=30;B.vx=-B.face*3;
     const [bx,by]=spTargetPos(T);puff(bx,by,14,'ink',14);floatText(B.x,by-70,`-${SPECIAL_BOSS_DMG} 필살기!`,'#ffd36a');
-    if(B.hp<=0){B.hp=0;B.state='down';B.t=0;G.binks=[];toast('보스를 물리쳤어요!',null,'#fff3c4');}}
+    if(B.hp<=0){B.hp=0;B.state='down';B.t=0;G.binks=[];toast('보스를 물리쳤어요!',null,'#fff3c4');SFX.play('bossDown');}}
   else{T.c.hitT=14;floatText(T.c.x,T.c.y-30,'잡았다!','#ffd36a');}
 }
 function drawShelter(p){ // 잡아먹은 어패류의 껍데기 속에 숨은 모습
@@ -3988,7 +4020,7 @@ function drawFishSwim(sp,w,h,t,ph,spd){
 /* ---------- 부산 북항: 흑상어 '부캉이' 구하기 ----------
    부캉이를 공격하는 게 아니라, 몸에 감긴 그물·쓰레기를 먹물로 부숴서 풀어 줘요. */
 const SHK=0.66; // 부캉이 크기 배율
-function startRescue(){
+function startRescue(){SFX.play('boss');
   const g=G.S.ground,anchorX=STAGE+W*0.5;
   const midY=G.S.sf+(g-G.S.sf)*0.55;
   G.boss={rescue:1,x:STAGE+W+260,y:midY,face:-1,t:0,state:'enter',vx:0,vy:0,hitT:0,anchor:{x:anchorX,y:g-6},
