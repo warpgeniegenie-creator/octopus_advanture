@@ -33,7 +33,7 @@ body{font-family:var(--font-b);font-size:15px;line-height:1.55;padding-left:max(
 .wrap{max-width:1100px;margin:0 auto;padding-block:22px 40px;display:flex;flex-direction:column;gap:18px}
 header{display:flex;flex-direction:column;gap:4px}
 header h1{font-family:var(--font-d);font-weight:400;font-size:clamp(30px,5.2vw,46px);margin:0;line-height:1.1;text-wrap:balance}
-header h1 span{color:var(--coral)}
+header h1 span{color:#4aa8e6}header h1 .octo{color:#e6683e}
 header p{margin:0;color:var(--mute);max-width:65ch}
 .seas{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
 .sea{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
@@ -779,7 +779,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 <body>
 <div class="wrap">
   <header>
-    <h1>문어의 <span>바다 모험</span></h1>
+    <h1><b class="octo" style="font-weight:inherit">문어</b>의 <span>바다 모험</span></h1>
     <p>문어가 되어 동해·서해·남해의 실제 장소를 골라 떠나요. 모래 바닥과 갯바위, 항구와 방파제, 물 밖 갯벌과 섬, 펄 속 침몰선까지 그곳 지형 그대로 헤쳐 나가며 그 바다에 사는 생물을 만나고, 마지막에 기다리는 거대 문어를 물리치세요.</p>
   </header>
 
@@ -2266,7 +2266,6 @@ function drawWhale(B){
   // 덮치기 그림자 표시
   if(B.pat==='breach'&&B.launched&&!B.inW){const tx=B.tx-G.camX,gy=gAt(B.tx);ctx.fillStyle='rgba(0,0,0,0.25)';ctx.beginPath();ctx.ellipse(tx,gy-2,90,10,0,0,7);ctx.fill();
     }
-  if(B.pat==='charge'&&B.ph<45){ctx.strokeStyle=`rgba(255,80,60,${0.3+0.3*Math.sin(t*0.5)})`;ctx.lineWidth=3;ctx.setLineDash([10,8]);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(B.face<0?0:W,y);ctx.stroke();ctx.setLineDash([]);}
   ctx.save();ctx.translate(x,y);
   {const tgt=(B.pat==='breach'&&B.launched)||B.state==='down'?clamp(Math.atan2(B.vy,Math.abs(B.vx)+0.01),-1.35,1.35):0;B.rotS=(B.rotS||0)+(tgt-(B.rotS||0))*0.25;if(Math.abs(B.rotS)>0.005)ctx.rotate(B.rotS*(B.face<0?-1:1));
     const at=B.pat==='breach'&&B.launched&&!B.inW?16:0;B.arch=(B.arch||0)+(at-(B.arch||0))*0.12;}
