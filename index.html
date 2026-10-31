@@ -1417,7 +1417,26 @@ function resetUI(confirming){
   $('#bResetYes').onclick=()=>{REC[recLoc]=blankRec();saveRec();renderRecords();};
   $('#bResetNo').onclick=()=>resetUI(false);
 }
-function showEnd(){
+/* ---------- 승리 · 패배 화면 ---------- */
+function drawResult(){const w=G.win,t=G.endT,a=Math.min(1,t/30),sc=t<26?0.4+Math.sin(Math.min(1,t/26)*Math.PI*0.62)*0.75:1+Math.sin(t*0.08)*0.025,cx=W/2,cy=H*0.42,hs=Math.min(HUDS,1.6);
+  ctx.save();
+  if(w){const g=ctx.createRadialGradient(cx,cy,10,cx,cy,Math.max(W,H)*0.7);g.addColorStop(0,`rgba(255,226,140,${0.35*a})`);g.addColorStop(1,`rgba(20,30,60,${0.55*a})`);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(t*0.006);ctx.globalCompositeOperation='lighter';for(let i=0;i<14;i++){ctx.rotate(Math.PI*2/14);ctx.fillStyle=`rgba(255,220,120,${0.08*a})`;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.max(W,H),-40);ctx.lineTo(Math.max(W,H),40);ctx.closePath();ctx.fill();}ctx.restore(); // 빛살
+    for(let i=0;i<60;i++){const h1=((i*2654435761)>>>0)%1000/1000,h2=((i*40503+7)>>>0)%1000/1000,x=h1*W+Math.sin(t*0.05+i)*20,y=((h2*H*1.2+t*(1.5+h1*2))%(H*1.2))-H*0.1; // 색종이
+      ctx.save();ctx.translate(x,y);ctx.rotate(t*0.1+i);ctx.fillStyle=['#ffd166','#e6683e','#4aa8e6','#7ed58a','#f4f1ea'][i%5];ctx.globalAlpha=a;ctx.fillRect(-4,-2,8,4);ctx.restore();}}
+  else{ctx.fillStyle=`rgba(4,8,16,${0.62*a})`;ctx.fillRect(0,0,W,H);
+    for(let i=0;i<24;i++){const h1=((i*2654435761)>>>0)%1000/1000,x=h1*W,y=H-((t*(0.8+h1)+i*40)%(H+40));ctx.strokeStyle=`rgba(200,220,255,${0.3*a})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x+Math.sin(t*0.05+i)*6,y,2+h1*4,0,7);ctx.stroke();}} // 쓸쓸한 공기방울
+  ctx.translate(cx,cy);ctx.scale(sc,sc);ctx.textAlign='center';ctx.textBaseline='middle';
+  const fs=Math.round(Math.min(W*0.16,140)*hs/1.2);ctx.font=`400 ${fs}px "Black Han Sans","Apple SD Gothic Neo",sans-serif`;
+  ctx.lineJoin='round';ctx.lineWidth=fs*0.12;ctx.strokeStyle=w?'#7a3a10':'#0a1220';ctx.globalAlpha=a;ctx.strokeText(w?'승리!':'패배',0,0);
+  const tg=ctx.createLinearGradient(0,-fs*0.5,0,fs*0.5);if(w){tg.addColorStop(0,'#fff6c8');tg.addColorStop(0.5,'#ffd166');tg.addColorStop(1,'#e6683e');}else{tg.addColorStop(0,'#c8d4e4');tg.addColorStop(1,'#6a7a90');}
+  ctx.fillStyle=tg;ctx.fillText(w?'승리!':'패배',0,0);
+  ctx.font=`700 ${Math.round(16*hs)}px "IBM Plex Sans KR",sans-serif`;ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,0.55)';
+  const sub=w?(G.S.boss.rescue?'부캉이를 구했어요!':`${G.S.boss.name}을(를) 물리쳤어요!`):(G.boss?`${G.S.boss.name}에게 졌어요… 다시 도전해요!`:'에너지가 다 떨어졌어요… 다시 도전해요!');
+  ctx.strokeText(sub,0,fs*0.72);ctx.fillStyle=w?'#fff3c4':'#dfe8f2';ctx.fillText(sub,0,fs*0.72);
+  if(t>70){ctx.globalAlpha=0.6+0.4*Math.sin(t*0.12);ctx.font=`600 ${Math.round(13*hs)}px "IBM Plex Sans KR",sans-serif`;ctx.fillStyle='#f4f1ea';ctx.fillText('화면을 누르면 넘어가요',0,fs*0.72+Math.round(30*hs));}
+  ctx.restore();}
+function showEnd(){if(G.shownEnd)return;G.shownEnd=1;
   const S=G.S,win=G.win;saveRecord(G,true);
   if(win&&S.boss.rescue){$('#endTitle').textContent='부캉이가 큰 바다로 돌아갔어요!';
     $('#endMsg').textContent='그물과 쓰레기를 모두 걷어 내자 부캉이가 고맙다는 듯 한 바퀴 돌고 큰 바다로 헤엄쳐 갔어요. 실제 부캉이는 멸종위기종 흑상어 암컷(약 3m)으로, 2026년 9월 18일 북항 친수공원 경관수로에 나타나 34일 동안 머물다 10월 23일 큰 바다로 떠난 것으로 추정돼요. 실제 부캉이가 그물에 묶여 있지는 않았어요. 게임 속 그물·쓰레기는 바다에 버려진 폐어구와 쓰레기가 바다 생물을 옭아매는 문제를 담은 이야기예요.';show('end');return;}
@@ -1578,6 +1597,8 @@ const SFX=(()=>{let ac=null,master=null,ambBus=null,vol={amb:0.7,sfx:0.8},nbuf=n
   lab();}
 /* ---------- 시작 화면: 바다 속을 걷는 문어 ---------- */
 let titleRAF=0,tT=0,TB=[];
+addEventListener('pointerdown',()=>{if(G&&G.phase==='end'&&!$('#game').hidden)G.endSkip=1;});
+addEventListener('keydown',e=>{if(G&&G.phase==='end'&&!$('#game').hidden&&(e.code==='Space'||e.code==='Enter'))G.endSkip=1;});
 function titleSetup(){
   if(!titleSetup.once){titleSetup.once=1;const go=()=>{SFX.unlock();SFX.amb();$('#tTap').hidden=true;if($('#game').hidden&&$('#end').hidden)SFX.music(true);removeEventListener('pointerdown',go);removeEventListener('keydown',go);};addEventListener('pointerdown',go);addEventListener('keydown',go);}
   let last=null;try{last=localStorage.getItem('octoLast');}catch(e){}
@@ -2601,7 +2622,7 @@ function behave(c,S,p){
 /* ---------- 업데이트 ---------- */
 function step(){
   const S=G.S,p=G.p;G.t++;
-  if(G.phase==='end'){G.endT++;updateParts();if(G.endT===80)showEnd();return;}
+  if(G.phase==='end'){G.endT++;updateParts();if(G.endT===250||(G.endSkip&&G.endT>70))showEnd();return;} // 승리·패배 화면을 약 4초 보여준 뒤 결과 창으로 (화면을 누르면 넘어가요)
   // --- 플레이어
   if(p.blockT>0)p.blockT--;if(p.safe>0&&!p.sp)p.safe--;
   while(hideQ>0){hideQ--;
@@ -3117,7 +3138,7 @@ function bladeLobed(pts,wf,c1,c2,t,seed){const [L,Rr]=bladeSides(pts,wf,t,seed,0
   for(const side of [L,Rr])for(let k=2;k<n;k++){const [cx2,cy2]=pts[k],[ox,oy]=side[k],dx=ox-cx2,dy=oy-cy2,tip=1.6+0.4*Math.sin(k*1.7+seed);ctx.beginPath();ctx.moveTo(pts[k-1][0],pts[k-1][1]);
     ctx.quadraticCurveTo(cx2+dx*0.9,cy2+dy*0.9,cx2+dx*tip+(pts[k+1][0]-pts[k-1][0])*0.25,cy2+dy*tip+(pts[k+1][1]-pts[k-1][1])*0.25);ctx.quadraticCurveTo(cx2+dx*0.5,cy2+dy*0.5,pts[k+1][0],pts[k+1][1]);ctx.closePath();ctx.fill();}
   ctx.strokeStyle=c2;ctx.lineWidth=2.2;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(const q of pts)ctx.lineTo(q[0],q[1]);ctx.stroke();} // 가운데 굵은 맥
-function boatKeel(b){if(b.keel!=null)return b.keel;if(b.x-b.len*0.46<300)b.x=300+b.len*0.46; /* 출발 지점 바로 위엔 배를 두지 않아요 */const sf=G.S.sf,x1=b.x-b.len*0.46,x2=b.x+b.len*0.46;let gmin=1e9;for(let x=x1;x<=x2;x+=8)gmin=Math.min(gmin,gAt(x));
+function boatKeel(b){if(b.keel!=null)return b.keel;if(b.x-b.len*0.46<300)b.x=300+b.len*0.46; /* 출발 지점 바로 위엔 배를 두지 않아요 */const sf=G.S.sf,x1=b.x-b.len*0.46-90,x2=b.x+b.len*0.46+90;let gmin=1e9; /* 배 앞뒤 바닥까지 보고 엎드리면 꼭 지나갈 수 있게 */for(let x=x1;x<=x2;x+=8)gmin=Math.min(gmin,gAt(x));
   b.keel=Math.min(Math.max(sf+30,gmin-62),gmin-46);return b.keel;} // 선체 밑바닥: 서서는 못 지나가고 엎드리면 지나갈 높이
 function boatHulls(prevX){const p=G.p,sf=G.S.sf;
   for(const b of (G.boats||[])){const ky=boatKeel(b),hx1=b.x-b.len*0.44,hx2=b.x+b.len*0.44;if(p.x+30<hx1||p.x-30>hx2)continue;
@@ -4205,6 +4226,7 @@ function render(){
   if(G.flash>0){ctx.fillStyle=`rgba(255,226,150,${G.flash/40})`;ctx.fillRect(0,0,W,H);}
   ctx.restore();
   drawHUD();
+  if(G.phase==='end'&&!G.shownEnd)drawResult();
   {const hs=(p.shells||0)+'|'+(p.shell>0);if(hs!==G.hideSync){G.hideSync=hs;const b=$('#bHide'),n=$('#hideN');if(b){b.classList.toggle('empty',!(p.shells>0)&&!(p.shell>0));b.classList.toggle('active',p.shell>0);}if(n)n.textContent=p.shell>0?'나오기':`껍데기 ${p.shells||0}`;}}
   const ready=p.spg>=100&&!p.sp;if(ready!==G.spReady){G.spReady=ready;const b=$('#bSp');if(b)b.classList.toggle('ready',ready);}
 }
