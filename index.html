@@ -71,11 +71,11 @@ canvas{display:block;width:100%;aspect-ratio:16/9;max-width:100%;touch-action:no
 kbd{font-family:var(--font-b);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 6px;color:var(--fg)}
 .pad{display:none;justify-content:space-between;align-items:stretch;gap:12px;margin-top:12px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .pad .joy::before{content:'';position:absolute;inset:-26px;border-radius:50%} /* 눈에 안 보이는 넓은 터치 영역 */
-.pad .joy.on{opacity:0.8}.pad .act button{opacity:0.55;transition:opacity .12s}.pad .act button:active,.pad .act button.on{opacity:0.85}.pad .joy{opacity:0.5;transition:opacity .15s;position:relative;width:202px;height:202px;border-radius:50%;background:radial-gradient(circle,rgba(30,70,95,0.55),rgba(10,30,44,0.75));border:2px solid rgba(255,255,255,0.28);touch-action:none;flex:0 0 auto}
-.pad .joy .knob{position:absolute;left:50%;top:50%;width:83px;height:83px;margin:-41.5px 0 0 -41.5px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd2b8,#ee6a40 60%,#b8462a);box-shadow:0 3px 10px rgba(0,0,0,0.45);pointer-events:none;transition:transform .06s}
+.pad .joy.on{opacity:0.8}.pad .act button{opacity:0.55;transition:opacity .12s}.pad .act button:active,.pad .act button.on{opacity:0.85}.pad .joy{opacity:0.5;transition:opacity .15s;position:relative;width:168px;height:168px;border-radius:50%;background:radial-gradient(circle,rgba(30,70,95,0.55),rgba(10,30,44,0.75));border:2px solid rgba(255,255,255,0.28);touch-action:none;flex:0 0 auto}
+.pad .joy .knob{position:absolute;left:50%;top:50%;width:69px;height:69px;margin:-34.5px 0 0 -34.5px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd2b8,#ee6a40 60%,#b8462a);box-shadow:0 3px 10px rgba(0,0,0,0.45);pointer-events:none;transition:transform .06s}
 .pad .joy.on .knob{transition:none}
-.pad .joy .ja{position:absolute;color:rgba(255,255,255,0.6);font-size:22px;pointer-events:none}
-.pad .joy .up{left:50%;top:9px;transform:translateX(-50%)}.pad .joy .dn{left:50%;bottom:9px;transform:translateX(-50%)}.pad .joy .lf{left:11px;top:50%;transform:translateY(-50%)}.pad .joy .rt{right:11px;top:50%;transform:translateY(-50%)}
+.pad .joy .ja{position:absolute;color:rgba(255,255,255,0.6);font-size:18px;pointer-events:none}
+.pad .joy .up{left:50%;top:7px;transform:translateX(-50%)}.pad .joy .dn{left:50%;bottom:7px;transform:translateX(-50%)}.pad .joy .lf{left:9px;top:50%;transform:translateY(-50%)}.pad .joy .rt{right:9px;top:50%;transform:translateY(-50%)}
 .pad .joy.jumped .up{color:#ffe08a}
 .pad .act{display:grid;grid-template-columns:repeat(2,minmax(45px,56px));grid-template-rows:40px 40px;gap:6px}
 .pad button{font:inherit;font-weight:700;font-size:12px;line-height:1.05;width:100%;height:100%;border-radius:10px;padding:0 1px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);touch-action:none;-webkit-tap-highlight-color:transparent;cursor:pointer}
@@ -123,13 +123,13 @@ body.touch.playing .pad .act{grid-template-columns:repeat(3,minmax(40px,68px));g
   body.touch.playing .pad button.on{background:rgba(238,106,64,0.85)}
   body.touch.playing .pad .sp{background:rgba(60,45,15,0.5)}
   body.touch.playing .pad .sp.ready{background:rgba(214,158,40,0.9)}
-  body.touch.playing .pad .joy{width:196px;height:196px;background:radial-gradient(circle,rgba(30,70,95,0.35),rgba(10,30,44,0.5))}
+  body.touch.playing .pad .joy{width:163px;height:163px;background:radial-gradient(circle,rgba(30,70,95,0.35),rgba(10,30,44,0.5))}
   body.touch.playing .pad .act{grid-template-columns:repeat(3,49px);grid-template-rows:43px 43px}
   body.touch.playing .tools .btn{background:rgba(6,20,28,0.5);border-color:rgba(255,255,255,0.28);color:#fff;padding:5px 9px;font-size:12px}
 }
 @media (orientation:portrait){ /* 특별판은 세로 화면도 꽉 차게 */
   body.touch.playing.deepMode #rotateHint{display:none}
-  body.touch.playing.deepMode #game .bar{bottom:calc(222px + env(safe-area-inset-bottom,0px))!important;flex-wrap:nowrap;white-space:nowrap;width:max-content;max-width:none}
+  body.touch.playing.deepMode #game .bar{bottom:calc(188px + env(safe-area-inset-bottom,0px))!important;flex-wrap:nowrap;white-space:nowrap;width:max-content;max-width:none}
   body.touch.playing.deepMode #game{display:block;padding:0}
   body.touch.playing.deepMode #game .stage{position:absolute;top:0;bottom:0;left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px)}
   body.touch.playing.deepMode #game canvas{width:100%;height:100%;aspect-ratio:auto}
@@ -142,7 +142,7 @@ body.touch.playing .pad .act{grid-template-columns:repeat(3,minmax(40px,68px));g
   body.touch.playing.deepMode .pad button.on{background:rgba(238,106,64,0.85)}
   body.touch.playing.deepMode .pad .sp{background:rgba(60,45,15,0.5)}
   body.touch.playing.deepMode .pad .sp.ready{background:rgba(214,158,40,0.9)}
-  body.touch.playing.deepMode .pad .joy{width:196px;height:196px;background:radial-gradient(circle,rgba(30,70,95,0.35),rgba(10,30,44,0.5))}
+  body.touch.playing.deepMode .pad .joy{width:163px;height:163px;background:radial-gradient(circle,rgba(30,70,95,0.35),rgba(10,30,44,0.5))}
   body.touch.playing.deepMode .pad .act{grid-template-columns:repeat(3,49px);grid-template-rows:43px 43px}
   body.touch.playing.deepMode .tools .btn{background:rgba(6,20,28,0.5);border-color:rgba(255,255,255,0.28);color:#fff;padding:5px 9px;font-size:12px}
 }
